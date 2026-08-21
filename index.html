@@ -616,8 +616,8 @@
             <input type="text" id="add-emp-nome" required placeholder="Digite o nome completo..." class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
           </div>
           <div>
-            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">CPF</label>
-            <input type="text" id="add-emp-cpf" placeholder="000.000.000-00" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">CPF *</label>
+            <input type="text" id="add-emp-cpf" required placeholder="000.000.000-00" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
           </div>
 
           <div>
@@ -2114,6 +2114,13 @@
         }
       });
 
+      const cpf = document.getElementById('add-emp-cpf').value.trim();
+      if (!cpf) {
+        alert("O preenchimento do campo CPF é obrigatório.");
+        document.getElementById('add-emp-cpf').focus();
+        return;
+      }
+
       const payload = {
         id: emp_id || undefined,
         loja_num,
@@ -2121,7 +2128,7 @@
         matricula: document.getElementById('add-emp-matricula').value.trim(),
         nome: document.getElementById('add-emp-nome').value.trim(),
         status: document.getElementById('add-emp-status').value,
-        cpf: document.getElementById('add-emp-cpf').value.trim(),
+        cpf: cpf,
         cargo: document.getElementById('add-emp-cargo').value.trim(),
         area: document.getElementById('add-emp-area').value.trim(),
         lider_direto: document.getElementById('add-emp-lider').value.trim(),
