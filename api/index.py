@@ -76,6 +76,7 @@ class handler(BaseHTTPRequestHandler):
             total_children = 0
             pcd_count = 0
             children_by_age = {}
+            store_metrics = {}
 
             for e in employees_raw:
                 try:
@@ -121,6 +122,16 @@ class handler(BaseHTTPRequestHandler):
                 }
                 employees.append(emp)
 
+                # Store aggregation count
+                l_num = str(emp['loja_num']).strip()
+                if l_num not in store_metrics:
+                    store_metrics[l_num] = {'total': 0, 'ativos': 0, 'desligados': 0}
+                store_metrics[l_num]['total'] += 1
+                if 'ATIVO' in emp['status'].upper():
+                    store_metrics[l_num]['ativos'] += 1
+                else:
+                    store_metrics[l_num]['desligados'] += 1
+
                 if emp['cargo']:
                     cargos_set.add(emp['cargo'])
                 if 'ATIVO' in emp['status'].upper():
@@ -139,11 +150,25 @@ class handler(BaseHTTPRequestHandler):
                         label = f"{f_idade} anos" if f_idade > 0 else "Menos de 1 ano"
                         children_by_age[label] = children_by_age.get(label, 0) + 1
 
+            # Build enriched dynamic stores list
+            stores_output = []
+            for s in stores_raw:
+                s_num = str(s.get('loja_num', '')).strip()
+                m = store_metrics.get(s_num, {'total': 0, 'ativos': 0, 'desligados': 0})
+                stores_output.append({
+                    'loja_num': s_num,
+                    'nome_loja': s.get('nome_loja') or f"Loja {s_num}",
+                    'filename': s.get('filename') or f"Base Loja {s_num}",
+                    'total_colaboradores': m['total'],
+                    'ativos': m['ativos'],
+                    'desligados': m['desligados']
+                })
+
             response_data = {
                 'last_updated': datetime.datetime.now().strftime('%d/%m/%Y %H:%M'),
                 'today_date': datetime.date.today().strftime('%d/%m/%Y'),
                 'current_year': datetime.date.today().year,
-                'stores_count': len(stores_raw),
+                'stores_count': len(stores_output),
                 'total_records': len(employees),
                 'active_records': active_count,
                 'terminated_records': term_count,
@@ -152,7 +177,7 @@ class handler(BaseHTTPRequestHandler):
                 'children_by_age': children_by_age,
                 'admission_years': sorted(list(set(e['adm_ano'] for e in employees if e['adm_ano'])), reverse=True),
                 'pcd_count': pcd_count,
-                'stores': stores_raw,
+                'stores': stores_output,
                 'cargos': sorted(list(cargos_set)),
                 'employees': employees
             }
@@ -315,6 +340,28 @@ class handler(BaseHTTPRequestHandler):
             ]
             query_d1(sql, params)
             return self._send_json({'success': True, 'employee': emp})
+
+        elif path in ['/api/stores/save', '/api/stores/save.py', '/api/stores', '/api/stores.py']:
+            loja_num = str(payload.get('loja_num', '')).strip()
+            nome_loja = str(payload.get('nome_loja', '')).strip()
+            
+            if not loja_num or not nome_loja:
+                return self._send_json({'success': False, 'message': 'Número e nome da loja são obrigatórios.'}, status=400)
+            
+            sql = '''INSERT OR REPLACE INTO stores (loja_num, nome_loja, filename, total_colaboradores, ativos, desligados) 
+                     VALUES (?, ?, ?, 0, 0, 0);'''
+            query_d1(sql, [loja_num, nome_loja, f"Loja {loja_num} - {nome_loja}"])
+            return self._send_json({'success': True, 'loja_num': loja_num, 'nome_loja': nome_loja})
+
+        elif path in ['/api/stores/delete', '/api/stores/delete.py']:
+            loja_num = str(payload.get('loja_num', '')).strip()
+            if not loja_num:
+                return self._send_json({'success': False, 'message': 'Número da loja não informado.'}, status=400)
+            
+            # Cascade: delete all employees in this store and the store itself
+            query_d1('DELETE FROM employees WHERE loja_num = ?;', [loja_num])
+            query_d1('DELETE FROM stores WHERE loja_num = ?;', [loja_num])
+            return self._send_json({'success': True, 'deleted_store': loja_num})
 
         elif path in ['/api/users/save', '/api/users/save.py', '/api/users', '/api/users.py']:
             u = payload

@@ -478,7 +478,25 @@
     </section>
 
     <!-- Tab 4: Stores List Cards -->
-    <section id="tab-stores" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
+    <section id="tab-stores" class="hidden space-y-4">
+      <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-200">
+        <div>
+          <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="store" class="w-5 h-5 text-lime-600 dark:text-endoLime-400"></i>
+            <span>Gestão de Lojas Parceiras (<span id="stores-total-count-badge" class="text-lime-700 dark:text-endoLime-400 font-bold">0</span>)</span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Cadastre novas unidades parceiras ou gerencie lojas existentes e suas bases integradas
+          </p>
+        </div>
+        <button onclick="openAddStoreModal()" class="px-4 py-2.5 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-xs font-black text-black shadow-md shadow-endoLime-400/20 flex items-center gap-2 transition transform active:scale-95 brand-lime-glow shrink-0">
+          <i data-lucide="plus" class="w-4 h-4 text-black"></i>
+          <span>+ Nova Loja</span>
+        </button>
+      </div>
+
+      <div id="stores-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
 
   </main>
 
@@ -811,6 +829,82 @@
             <span id="modal-emp-children-count" class="text-cyan-700 dark:text-cyan-400 font-bold">0 Filhos</span>
           </h4>
           <div id="modal-children-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  <!-- MODAL CADASTRO DE LOJA -->
+  <div id="add-store-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-endoDark-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-endoDark-800 flex items-center justify-between bg-slate-50 dark:bg-endoDark-950/50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-endoLime-400 text-black font-black flex items-center justify-center">
+            <i data-lucide="store" class="w-5 h-5 text-black"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white">Cadastrar Nova Loja</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Adicione uma nova unidade parceira à plataforma</p>
+          </div>
+        </div>
+        <button onclick="closeAddStoreModal()" class="w-8 h-8 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleStoreFormSubmit(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-[10px] font-extrabold text-lime-700 dark:text-endoLime-400 uppercase tracking-wider mb-1">Número / Código da Loja *</label>
+          <input type="text" id="store-input-num" required placeholder="Ex: 2090" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-endoLime-400 font-bold">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Nome / Praça da Loja *</label>
+          <input type="text" id="store-input-nome" required placeholder="Ex: CURITIBA PARCEIROS" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-endoLime-400">
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeAddStoreModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
+          <button type="submit" id="btn-save-store" class="px-5 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black font-black text-xs uppercase tracking-wider brand-lime-glow">Criar Loja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO DE EXCLUSÃO DE LOJA (COM ALERTA) -->
+  <div id="delete-store-modal" class="fixed inset-0 bg-slate-900/70 dark:bg-endoDark-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-rose-200 dark:bg-endoDark-900 dark:border-rose-900/60 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-endoDark-800 bg-rose-50/50 dark:bg-rose-950/20 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center font-black shrink-0">
+          <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-black text-rose-600 dark:text-rose-400">Excluir Loja Parceira</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Esta ação é irreversível e exige confirmação</p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          Você está prestes a excluir a <span id="del-store-name-display" class="font-bold text-slate-900 dark:text-white">Loja</span> do sistema.
+        </p>
+
+        <div id="del-store-alert-box" class="p-4 rounded-2xl bg-rose-100/70 border border-rose-300 dark:bg-rose-950/40 dark:border-rose-800/80 text-rose-900 dark:text-rose-300 text-xs space-y-1.5">
+          <div class="font-black flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+            <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+            <span>ATENÇÃO: VINCULAÇÃO DE COLABORADORES</span>
+          </div>
+          <p id="del-store-warning-text" class="text-[11px] leading-relaxed">
+            Esta loja possui colaboradores cadastrados. Ao confirmar a exclusão, a loja e <b>todos os seus colaboradores vinculados serão permanentemente excluídos</b> do banco de dados!
+          </p>
+        </div>
+
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+          Deseja realmente continuar com a exclusão definitiva?
+        </p>
+
+        <div class="pt-3 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeDeleteStoreModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
+          <button type="button" id="btn-confirm-del-store" onclick="executeDeleteStore()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-600/30 flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir Loja
+          </button>
         </div>
       </div>
     </div>
@@ -1768,10 +1862,14 @@
     }
 
     function renderStoresTab() {
-      const container = document.getElementById('tab-stores');
+      const container = document.getElementById('stores-grid-container') || document.getElementById('tab-stores');
       container.innerHTML = '';
 
-      (rawData.stores || []).forEach(s => {
+      const storesList = rawData.stores || [];
+      const badgeCount = document.getElementById('stores-total-count-badge');
+      if (badgeCount) badgeCount.innerText = storesList.length;
+
+      storesList.forEach(s => {
         const card = document.createElement('div');
         card.className = "bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl flex flex-col justify-between hover:border-endoLime-400/50 transition group cursor-pointer relative overflow-hidden";
         card.onclick = () => {
@@ -1780,17 +1878,27 @@
           switchTab('employees');
         };
 
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
+        const deleteButton = isAdmin ? `
+          <button type="button" onclick="event.stopPropagation(); requestDeleteStore('${s.loja_num}', '${s.nome_loja.replace(/'/g, "\\'")}', ${s.total_colaboradores})" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 transition" title="Excluir Loja">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : '';
+
         card.innerHTML = `
           <div class="flex items-center justify-between mb-3">
             <div class="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-endoLime-400/20 dark:bg-endoDark-800 text-lime-700 dark:text-endoLime-400 flex items-center justify-center font-black text-xs border border-slate-300 dark:border-endoDark-700 transition px-1 text-center">
               ${s.loja_num}
             </div>
-            <span class="text-[10px] text-lime-700 dark:text-endoLime-400 font-black px-2 py-0.5 bg-lime-100 dark:bg-endoLime-400/10 rounded-full border border-lime-300 dark:border-endoLime-400/30">🟢 Conectado</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-lime-700 dark:text-endoLime-400 font-black px-2 py-0.5 bg-lime-100 dark:bg-endoLime-400/10 rounded-full border border-lime-300 dark:border-endoLime-400/30">🟢 Conectada</span>
+              ${deleteButton}
+            </div>
           </div>
 
           <div>
             <h4 class="font-black text-slate-900 dark:text-white text-sm">Loja ${s.loja_num} - ${s.nome_loja}</h4>
-            <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${s.filename}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${s.filename || 'Base D1'}</p>
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-between text-xs font-semibold">
@@ -1801,6 +1909,7 @@
         `;
         container.appendChild(card);
       });
+      lucide.createIcons();
     }
 
     function switchTab(tab) {
@@ -2040,6 +2149,98 @@
         }
       } catch (err) {
         alert("Erro ao conectar ao servidor.");
+      }
+    }
+
+    /* GESTÃO DE LOJAS (CRIAR E EXCLUIR) */
+    let storeToDelete = null;
+
+    function openAddStoreModal() {
+      document.getElementById('store-input-num').value = '';
+      document.getElementById('store-input-nome').value = '';
+      document.getElementById('add-store-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAddStoreModal() {
+      document.getElementById('add-store-modal').classList.add('hidden');
+    }
+
+    async function handleStoreFormSubmit(e) {
+      e.preventDefault();
+      const loja_num = document.getElementById('store-input-num').value.trim();
+      const nome_loja = document.getElementById('store-input-nome').value.trim();
+
+      if (!loja_num || !nome_loja) {
+        alert("Por favor, preencha o número e o nome da loja.");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/stores/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loja_num, nome_loja })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeAddStoreModal();
+          await fetchData();
+          switchTab('stores');
+        } else {
+          alert("Erro ao criar loja: " + (data.message || 'Erro no servidor'));
+        }
+      } catch (err) {
+        alert("Erro ao conectar ao servidor.");
+      }
+    }
+
+    function requestDeleteStore(loja_num, nome_loja, totalColabs) {
+      storeToDelete = { loja_num, nome_loja, totalColabs };
+      document.getElementById('del-store-name-display').innerText = `Loja ${loja_num} - ${nome_loja}`;
+      
+      const warningText = document.getElementById('del-store-warning-text');
+      if (totalColabs > 0) {
+        warningText.innerHTML = `Esta loja possui <b>${totalColabs} colaborador(es) cadastrado(s)</b>. Ao confirmar, a loja e <b>todos os seus ${totalColabs} colaboradores serão permanentemente excluídos</b> do sistema!`;
+      } else {
+        warningText.innerHTML = `Esta loja não possui colaboradores vinculados no momento. Apenas o registro da unidade será excluído.`;
+      }
+
+      document.getElementById('delete-store-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeDeleteStoreModal() {
+      storeToDelete = null;
+      document.getElementById('delete-store-modal').classList.add('hidden');
+    }
+
+    async function executeDeleteStore() {
+      if (!storeToDelete) return;
+      const btn = document.getElementById('btn-confirm-del-store');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Excluindo...`;
+
+      try {
+        const res = await fetch('/api/stores/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loja_num: storeToDelete.loja_num })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeDeleteStoreModal();
+          await fetchData();
+          switchTab('stores');
+        } else {
+          alert("Erro ao excluir loja: " + (data.message || 'Erro no servidor'));
+        }
+      } catch (err) {
+        alert("Erro ao conectar ao servidor.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir Loja`;
+        lucide.createIcons();
       }
     }
 
