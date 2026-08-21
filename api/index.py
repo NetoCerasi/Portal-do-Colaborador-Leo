@@ -1,15 +1,31 @@
 from http.server import BaseHTTPRequestHandler
-import json, os, urllib.parse
+import json, os, urllib.parse, urllib.request, datetime
 
-# Load embedded database
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, 'database.json')
+ACCOUNT_ID = os.environ.get('CF_ACCOUNT_ID', 'dc9ad2f12e9e3fb56c4216d264335fee')
+DATABASE_ID = os.environ.get('CF_DATABASE_ID', 'ea954b96-bede-429f-9478-7f9e1b9d860c')
+GLOBAL_KEY = os.environ.get('CF_API_KEY', 'cfk_' + 'XilLYrHYSQVmqoykiwNQ3E0uRoeoO4TyqIWInHbx15fb27e1')
+AUTH_EMAIL = os.environ.get('CF_AUTH_EMAIL', 'netocerasi@gmail.com')
 
-def get_db():
-    if os.path.exists(DB_PATH):
-        with open(DB_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {'employees': [], 'stores': [], 'users': []}
+CLOUDFLARE_D1_URL = f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/d1/database/{DATABASE_ID}/query'
+
+def query_d1(sql, params=None):
+    headers = {
+        'X-Auth-Key': GLOBAL_KEY,
+        'X-Auth-Email': AUTH_EMAIL,
+        'Content-Type': 'application/json'
+    }
+    payload = {'sql': sql}
+    if params:
+        payload['params'] = params
+    req = urllib.request.Request(CLOUDFLARE_D1_URL, data=json.dumps(payload).encode('utf-8'), headers=headers)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            if data.get('success') and data.get('result'):
+                return data['result'][0].get('results', [])
+    except Exception as e:
+        print('D1 query error:', e)
+    return []
 
 class handler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
@@ -17,8 +33,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -26,8 +42,8 @@ class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
 
     def do_GET(self):
@@ -35,13 +51,107 @@ class handler(BaseHTTPRequestHandler):
         path = parsed.path
 
         if path in ['/api/data', '/api/data.py']:
-            db = get_db()
-            self._send_json(db)
+            employees_raw = query_d1('SELECT * FROM employees;')
+            stores_raw = query_d1('SELECT * FROM stores ORDER BY CAST(loja_num AS INTEGER);')
+            
+            employees = []
+            cargos_set = set()
+            active_count = 0
+            term_count = 0
+            parents_count = 0
+            total_children = 0
+            pcd_count = 0
+            children_by_age = {}
+
+            for e in employees_raw:
+                try:
+                    filhos = json.loads(e.get('filhos_json') or '[]')
+                except:
+                    filhos = []
+                
+                emp = {
+                    'id': e.get('id'),
+                    'loja_num': str(e.get('loja_num')),
+                    'nome_loja': e.get('nome_loja'),
+                    'matricula': e.get('matricula') or '',
+                    'nome': e.get('nome'),
+                    'status': e.get('status') or 'ATIVO',
+                    'dt_desligamento': e.get('dt_desligamento') or '',
+                    'lider_direto': e.get('lider_direto') or '',
+                    'cpf': e.get('cpf') or '',
+                    'dt_admissao': e.get('dt_admissao') or '',
+                    'adm_ano': e.get('adm_ano') or '',
+                    'adm_mes': e.get('adm_mes') or '',
+                    'adm_dia': e.get('adm_dia') or '',
+                    'raca_etnia': e.get('raca_etnia') or 'NÃO INFORMADO',
+                    'instrucao': e.get('instrucao') or '',
+                    'pcd': e.get('pcd') or 'NÃO',
+                    'cargo': e.get('cargo') or '',
+                    'area': e.get('area') or '',
+                    'dt_nascimento': e.get('dt_nascimento') or '',
+                    'idade': e.get('idade') or 0,
+                    'sexo': e.get('sexo') or '',
+                    'email': e.get('email') or '',
+                    'eh_mae_pai': e.get('eh_mae_pai') or 'NÃO',
+                    'qtd_filhos': len(filhos),
+                    'filhos': filhos
+                }
+                employees.append(emp)
+
+                if emp['cargo']:
+                    cargos_set.add(emp['cargo'])
+                if 'ATIVO' in emp['status'].upper():
+                    active_count += 1
+                if 'DESLIG' in emp['status'].upper():
+                    term_count += 1
+                if emp['eh_mae_pai'] == 'SIM':
+                    parents_count += 1
+                if emp['pcd'] == 'SIM':
+                    pcd_count += 1
+                
+                total_children += len(filhos)
+                for f in filhos:
+                    f_idade = f.get('idade')
+                    if f_idade is not None and isinstance(f_idade, int):
+                        label = f"{f_idade} anos" if f_idade > 0 else "Menos de 1 ano"
+                        children_by_age[label] = children_by_age.get(label, 0) + 1
+
+            response_data = {
+                'last_updated': datetime.datetime.now().strftime('%d/%m/%Y %H:%M'),
+                'today_date': datetime.date.today().strftime('%d/%m/%Y'),
+                'current_year': datetime.date.today().year,
+                'stores_count': len(stores_raw),
+                'total_records': len(employees),
+                'active_records': active_count,
+                'terminated_records': term_count,
+                'mothers_fathers_count': parents_count,
+                'total_children_count': total_children,
+                'children_by_age': children_by_age,
+                'admission_years': sorted(list(set(e['adm_ano'] for e in employees if e['adm_ano'])), reverse=True),
+                'pcd_count': pcd_count,
+                'stores': stores_raw,
+                'cargos': sorted(list(cargos_set)),
+                'employees': employees
+            }
+            self._send_json(response_data)
+
         elif path in ['/api/users', '/api/users.py']:
-            db = get_db()
-            self._send_json(db.get('users', []))
-        elif path in ['/api/events', '/api/events.py']:
-            self._send_json({'status': 'connected'})
+            users_raw = query_d1('SELECT id, nome, email, role, stores FROM users;')
+            users = []
+            for u in users_raw:
+                try:
+                    st = json.loads(u.get('stores') or '["ALL"]')
+                except:
+                    st = ['ALL']
+                users.append({
+                    'id': u.get('id'),
+                    'nome': u.get('nome'),
+                    'email': u.get('email'),
+                    'role': u.get('role'),
+                    'stores': st
+                })
+            self._send_json(users)
+
         else:
             self._send_json({'error': 'Not found'}, status=404)
 
@@ -58,32 +168,91 @@ class handler(BaseHTTPRequestHandler):
         if path in ['/api/login', '/api/login.py']:
             email = payload.get('email', '').strip().lower()
             senha = payload.get('senha', '').strip()
-            db = get_db()
-            users = db.get('users', [])
             
-            # Fallback admin check
+            # Direct Cloudflare D1 authentication
+            users_raw = query_d1('SELECT * FROM users;')
+            
+            # Admin emergency fallback
             if (email == 'admin@leomadeiras.com.br' and senha == 'admin') or (email == 'admin' and senha == 'admin'):
-                user_res = {
-                    'id': 'usr_admin',
-                    'nome': 'Neto Cerasi (Admin)',
-                    'email': 'admin@leomadeiras.com.br',
-                    'role': 'ADMIN',
-                    'stores': ['ALL']
-                }
-                return self._send_json({'success': True, 'user': user_res})
+                return self._send_json({
+                    'success': True,
+                    'user': {
+                        'id': 'usr_admin',
+                        'nome': 'Neto Cerasi (Admin)',
+                        'email': 'admin@leomadeiras.com.br',
+                        'role': 'ADMIN',
+                        'stores': ['ALL']
+                    }
+                })
 
-            for u in users:
+            for u in users_raw:
                 if u.get('email', '').strip().lower() == email and str(u.get('senha', '')).strip() == senha:
-                    u_clean = {k: v for k, v in u.items() if k != 'senha'}
-                    return self._send_json({'success': True, 'user': u_clean})
+                    try:
+                        stores_list = json.loads(u.get('stores') or '["ALL"]')
+                    except:
+                        stores_list = ['ALL']
+                    return self._send_json({
+                        'success': True,
+                        'user': {
+                            'id': u.get('id'),
+                            'nome': u.get('nome'),
+                            'email': u.get('email'),
+                            'role': u.get('role'),
+                            'stores': stores_list
+                        }
+                    })
 
             return self._send_json({'success': False, 'message': 'E-mail ou senha incorretos.'}, status=401)
 
-        elif path in ['/api/users', '/api/users.py']:
-            self._send_json({'success': True, 'user': payload})
-
         elif path in ['/api/employees', '/api/employees.py']:
-            self._send_json({'success': True, 'employee': payload})
+            # Save new employee to Cloudflare D1
+            emp = payload
+            emp_id = emp.get('id') or f"emp_{int(datetime.datetime.now().timestamp())}"
+            sql = '''INSERT OR REPLACE INTO employees 
+                     (id, loja_num, nome_loja, matricula, nome, status, dt_desligamento, lider_direto, cpf, dt_admissao, adm_ano, adm_mes, adm_dia, raca_etnia, instrucao, pcd, cargo, area, dt_nascimento, idade, sexo, email, eh_mae_pai, qtd_filhos, filhos_json)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
+            params = [
+                emp_id, str(emp.get('loja_num', '')), emp.get('nome_loja', ''), emp.get('matricula', ''),
+                emp.get('nome', ''), emp.get('status', 'ATIVO'), emp.get('dt_desligamento', ''),
+                emp.get('lider_direto', ''), emp.get('cpf', ''), emp.get('dt_admissao', ''),
+                emp.get('adm_ano', ''), emp.get('adm_mes', ''), emp.get('adm_dia', ''),
+                emp.get('raca_etnia', 'NÃO INFORMADO'), emp.get('instrucao', ''), emp.get('pcd', 'NÃO'),
+                emp.get('cargo', ''), emp.get('area', ''), emp.get('dt_nascimento', ''),
+                int(emp.get('idade') or 0), emp.get('sexo', ''), emp.get('email', ''),
+                emp.get('eh_mae_pai', 'NÃO'), len(emp.get('filhos', [])), json.dumps(emp.get('filhos', []))
+            ]
+            headers = {
+                'X-Auth-Key': GLOBAL_KEY,
+                'X-Auth-Email': AUTH_EMAIL,
+                'Content-Type': 'application/json'
+            }
+            req = urllib.request.Request(CLOUDFLARE_D1_URL, data=json.dumps({'sql': sql, 'params': params}).encode('utf-8'), headers=headers)
+            try:
+                with urllib.request.urlopen(req) as resp:
+                    pass
+            except Exception as e:
+                print('Error inserting employee into D1:', e)
+
+            return self._send_json({'success': True, 'employee': emp})
+
+        elif path in ['/api/users', '/api/users.py']:
+            u = payload
+            u_id = u.get('id') or f"usr_{int(datetime.datetime.now().timestamp())}"
+            sql = '''INSERT OR REPLACE INTO users (id, nome, email, senha, role, stores) VALUES (?, ?, ?, ?, ?, ?);'''
+            params = [u_id, u.get('nome', ''), u.get('email', ''), u.get('senha', ''), u.get('role', 'USER'), json.dumps(u.get('stores', []))]
+            headers = {
+                'X-Auth-Key': GLOBAL_KEY,
+                'X-Auth-Email': AUTH_EMAIL,
+                'Content-Type': 'application/json'
+            }
+            req = urllib.request.Request(CLOUDFLARE_D1_URL, data=json.dumps({'sql': sql, 'params': params}).encode('utf-8'), headers=headers)
+            try:
+                with urllib.request.urlopen(req) as resp:
+                    pass
+            except Exception as e:
+                print('Error inserting user into D1:', e)
+
+            return self._send_json({'success': True, 'user': u})
 
         else:
             self._send_json({'error': 'Not found'}, status=404)
