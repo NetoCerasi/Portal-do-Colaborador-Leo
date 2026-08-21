@@ -204,55 +204,47 @@ class handler(BaseHTTPRequestHandler):
 
             return self._send_json({'success': False, 'message': 'E-mail ou senha incorretos.'}, status=401)
 
-        elif path in ['/api/employees', '/api/employees.py']:
+        elif path in ['/api/employees/add', '/api/employees/add.py', '/api/employees', '/api/employees.py']:
             # Save new employee to Cloudflare D1
             emp = payload
             emp_id = emp.get('id') or f"emp_{int(datetime.datetime.now().timestamp())}"
             sql = '''INSERT OR REPLACE INTO employees 
                      (id, loja_num, nome_loja, matricula, nome, status, dt_desligamento, lider_direto, cpf, dt_admissao, adm_ano, adm_mes, adm_dia, raca_etnia, instrucao, pcd, cargo, area, dt_nascimento, idade, sexo, email, eh_mae_pai, qtd_filhos, filhos_json)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
+            
+            dt_adm = str(emp.get('dt_admissao', ''))
+            adm_ano, adm_mes, adm_dia = '', '', ''
+            if dt_adm:
+                parts = dt_adm.replace('-', '/').replace('.', '/').split('/')
+                if len(parts) == 3:
+                    adm_dia, adm_mes, adm_ano = parts[0].zfill(2), parts[1].zfill(2), parts[2]
+            
             params = [
                 emp_id, str(emp.get('loja_num', '')), emp.get('nome_loja', ''), emp.get('matricula', ''),
                 emp.get('nome', ''), emp.get('status', 'ATIVO'), emp.get('dt_desligamento', ''),
-                emp.get('lider_direto', ''), emp.get('cpf', ''), emp.get('dt_admissao', ''),
-                emp.get('adm_ano', ''), emp.get('adm_mes', ''), emp.get('adm_dia', ''),
+                emp.get('lider_direto', ''), emp.get('cpf', ''), dt_adm,
+                adm_ano, adm_mes, adm_dia,
                 emp.get('raca_etnia', 'NÃO INFORMADO'), emp.get('instrucao', ''), emp.get('pcd', 'NÃO'),
                 emp.get('cargo', ''), emp.get('area', ''), emp.get('dt_nascimento', ''),
                 int(emp.get('idade') or 0), emp.get('sexo', ''), emp.get('email', ''),
                 emp.get('eh_mae_pai', 'NÃO'), len(emp.get('filhos', [])), json.dumps(emp.get('filhos', []))
             ]
-            headers = {
-                'X-Auth-Key': GLOBAL_KEY,
-                'X-Auth-Email': AUTH_EMAIL,
-                'Content-Type': 'application/json'
-            }
-            req = urllib.request.Request(CLOUDFLARE_D1_URL, data=json.dumps({'sql': sql, 'params': params}).encode('utf-8'), headers=headers)
-            try:
-                with urllib.request.urlopen(req) as resp:
-                    pass
-            except Exception as e:
-                print('Error inserting employee into D1:', e)
-
+            query_d1(sql, params)
             return self._send_json({'success': True, 'employee': emp})
 
-        elif path in ['/api/users', '/api/users.py']:
+        elif path in ['/api/users/save', '/api/users/save.py', '/api/users', '/api/users.py']:
             u = payload
             u_id = u.get('id') or f"usr_{int(datetime.datetime.now().timestamp())}"
             sql = '''INSERT OR REPLACE INTO users (id, nome, email, senha, role, stores) VALUES (?, ?, ?, ?, ?, ?);'''
             params = [u_id, u.get('nome', ''), u.get('email', ''), u.get('senha', ''), u.get('role', 'USER'), json.dumps(u.get('stores', []))]
-            headers = {
-                'X-Auth-Key': GLOBAL_KEY,
-                'X-Auth-Email': AUTH_EMAIL,
-                'Content-Type': 'application/json'
-            }
-            req = urllib.request.Request(CLOUDFLARE_D1_URL, data=json.dumps({'sql': sql, 'params': params}).encode('utf-8'), headers=headers)
-            try:
-                with urllib.request.urlopen(req) as resp:
-                    pass
-            except Exception as e:
-                print('Error inserting user into D1:', e)
-
+            query_d1(sql, params)
             return self._send_json({'success': True, 'user': u})
+
+        elif path in ['/api/users/delete', '/api/users/delete.py']:
+            u_id = payload.get('id')
+            if u_id:
+                query_d1('DELETE FROM users WHERE id = ?;', [u_id])
+            return self._send_json({'success': True})
 
         else:
             self._send_json({'error': 'Not found'}, status=404)
