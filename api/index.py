@@ -27,6 +27,20 @@ def query_d1(sql, params=None):
         print('D1 query error:', e)
     return []
 
+def calc_idade(dt_nasc_str):
+    if not dt_nasc_str:
+        return 0
+    try:
+        parts = dt_nasc_str.replace('-', '/').replace('.', '/').split('/')
+        if len(parts) == 3:
+            d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
+            today = datetime.date.today()
+            born = datetime.date(y, m, d)
+            return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+    except:
+        pass
+    return 0
+
 class handler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
@@ -69,6 +83,15 @@ class handler(BaseHTTPRequestHandler):
                 except:
                     filhos = []
                 
+                # Recalculate children ages dynamically
+                for f in filhos:
+                    if f.get('data_nascimento') and (f.get('idade') is None or f.get('idade') == ''):
+                        f['idade'] = calc_idade(f.get('data_nascimento'))
+
+                idade_calc = e.get('idade') or 0
+                if e.get('dt_nascimento') and not idade_calc:
+                    idade_calc = calc_idade(e.get('dt_nascimento'))
+
                 emp = {
                     'id': e.get('id'),
                     'loja_num': str(e.get('loja_num')),
@@ -89,10 +112,10 @@ class handler(BaseHTTPRequestHandler):
                     'cargo': e.get('cargo') or '',
                     'area': e.get('area') or '',
                     'dt_nascimento': e.get('dt_nascimento') or '',
-                    'idade': e.get('idade') or 0,
+                    'idade': idade_calc,
                     'sexo': e.get('sexo') or '',
                     'email': e.get('email') or '',
-                    'eh_mae_pai': e.get('eh_mae_pai') or 'NÃO',
+                    'eh_mae_pai': 'SIM' if len(filhos) > 0 else (e.get('eh_mae_pai') or 'NÃO'),
                     'qtd_filhos': len(filhos),
                     'filhos': filhos
                 }
@@ -254,9 +277,20 @@ class handler(BaseHTTPRequestHandler):
                 }
             })
 
-        elif path in ['/api/employees/add', '/api/employees/add.py', '/api/employees', '/api/employees.py']:
+        elif path in ['/api/employees/add', '/api/employees/add.py', '/api/employees/edit', '/api/employees/edit.py', '/api/employees', '/api/employees.py']:
             emp = payload
             emp_id = emp.get('id') or f"emp_{int(datetime.datetime.now().timestamp())}"
+            
+            # Recalculate children objects
+            filhos = emp.get('filhos', [])
+            for f in filhos:
+                if f.get('data_nascimento') and (f.get('idade') is None or f.get('idade') == ''):
+                    f['idade'] = calc_idade(f.get('data_nascimento'))
+
+            emp_idade = int(emp.get('idade') or 0)
+            if emp.get('dt_nascimento') and not emp_idade:
+                emp_idade = calc_idade(emp.get('dt_nascimento'))
+
             sql = '''INSERT OR REPLACE INTO employees 
                      (id, loja_num, nome_loja, matricula, nome, status, dt_desligamento, lider_direto, cpf, dt_admissao, adm_ano, adm_mes, adm_dia, raca_etnia, instrucao, pcd, cargo, area, dt_nascimento, idade, sexo, email, eh_mae_pai, qtd_filhos, filhos_json)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
@@ -275,8 +309,9 @@ class handler(BaseHTTPRequestHandler):
                 adm_ano, adm_mes, adm_dia,
                 emp.get('raca_etnia', 'NÃO INFORMADO'), emp.get('instrucao', ''), emp.get('pcd', 'NÃO'),
                 emp.get('cargo', ''), emp.get('area', ''), emp.get('dt_nascimento', ''),
-                int(emp.get('idade') or 0), emp.get('sexo', ''), emp.get('email', ''),
-                emp.get('eh_mae_pai', 'NÃO'), len(emp.get('filhos', [])), json.dumps(emp.get('filhos', []))
+                emp_idade, emp.get('sexo', ''), emp.get('email', ''),
+                'SIM' if len(filhos) > 0 else (emp.get('eh_mae_pai') or 'NÃO'),
+                len(filhos), json.dumps(filhos)
             ]
             query_d1(sql, params)
             return self._send_json({'success': True, 'employee': emp})

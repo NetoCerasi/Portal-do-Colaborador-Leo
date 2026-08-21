@@ -457,7 +457,7 @@
                 <th class="py-3.5 px-4">Cargo / Área</th>
                 <th class="py-3.5 px-4">Data Admissão</th>
                 <th class="py-3.5 px-4 text-center">Filhos</th>
-                <th class="py-3.5 px-4 text-right">Detalhes</th>
+                <th class="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody id="employees-tbody" class="divide-y divide-slate-200 dark:divide-endoDark-800 text-slate-800 dark:text-slate-200"></tbody>
@@ -554,12 +554,12 @@
     <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border">
       <div class="px-6 py-4 border-b border-slate-200 dark:border-endoDark-800 flex items-center justify-between bg-slate-50 dark:bg-endoDark-950/50">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-endoLime-400 text-black font-black flex items-center justify-center">
+          <div id="emp-modal-icon" class="w-9 h-9 rounded-xl bg-endoLime-400 text-black font-black flex items-center justify-center">
             <i data-lucide="user-plus" class="w-5 h-5 text-black"></i>
           </div>
           <div>
-            <h3 class="text-base font-black text-slate-900 dark:text-white">Cadastrar Novo Colaborador</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Preencha as informações do colaborador para registrar na loja</p>
+            <h3 id="emp-modal-title" class="text-base font-black text-slate-900 dark:text-white">Cadastrar Novo Colaborador</h3>
+            <p id="emp-modal-subtitle" class="text-xs text-slate-500 dark:text-slate-400">Preencha as informações do colaborador para registrar na loja</p>
           </div>
         </div>
         <button onclick="closeAddEmployeeModal()" class="w-8 h-8 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
@@ -568,6 +568,7 @@
       </div>
 
       <form onsubmit="handleEmployeeFormSubmit(event)" class="p-6 space-y-4 overflow-y-auto flex-1">
+        <input type="hidden" id="edit-emp-id">
         
         <!-- Loja & Status -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-3.5 rounded-2xl border">
@@ -670,7 +671,7 @@
 
         <div class="pt-4 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-3">
           <button type="button" onclick="closeAddEmployeeModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black font-black text-xs uppercase tracking-wider brand-lime-glow">Salvar Colaborador</button>
+          <button type="submit" id="btn-save-emp" class="px-5 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black font-black text-xs uppercase tracking-wider brand-lime-glow">Salvar Colaborador</button>
         </div>
       </form>
     </div>
@@ -780,9 +781,15 @@
             </p>
           </div>
         </div>
-        <button onclick="closeModal()" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-modal-edit-emp" onclick="triggerEditFromDetailsModal()" class="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black flex items-center gap-1.5 transition shadow-md">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Editar Dados</span>
+          </button>
+          <button onclick="closeModal()" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
 
       <div class="p-6 space-y-6 overflow-y-auto">
@@ -1713,9 +1720,12 @@
               ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30">${e.qtd_filhos} filho(s)</span>`
               : `<span class="text-slate-400 dark:text-slate-500 text-[10px]">-</span>`}
           </td>
-          <td class="py-3.5 px-4 text-right">
-            <button onclick="openModal('${e.id}')" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 text-[11px] font-bold border border-slate-300 dark:border-endoDark-700 transition">
+          <td class="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+            <button onclick="openModal('${e.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 text-[11px] font-bold border border-slate-300 dark:border-endoDark-700 transition" title="Ver todos os detalhes deste colaborador">
               Ver Mais
+            </button>
+            <button onclick="openEditEmployeeModal('${e.id}')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 dark:text-amber-400 text-[11px] font-bold border border-amber-300 dark:border-amber-500/40 transition" title="Editar dados cadastrais">
+              Editar
             </button>
           </td>
         `;
@@ -1800,11 +1810,21 @@
       }
     }
 
-    /* CADASTRO DE COLABORADOR MODAL LOGIC */
+    /* CADASTRO E EDIÇÃO DE COLABORADOR MODAL LOGIC */
+    let currentViewingEmpId = null;
+
     function openAddEmployeeModal() {
+      document.getElementById('edit-emp-id').value = '';
+      document.getElementById('emp-modal-title').innerText = 'Cadastrar Novo Colaborador';
+      document.getElementById('emp-modal-subtitle').innerText = 'Preencha as informações do colaborador para registrar na loja';
+      document.getElementById('btn-save-emp').innerText = 'Salvar Colaborador';
+      
+      const iconEl = document.getElementById('emp-modal-icon');
+      iconEl.className = "w-9 h-9 rounded-xl bg-endoLime-400 text-black font-black flex items-center justify-center";
+      iconEl.innerHTML = `<i data-lucide="user-plus" class="w-5 h-5 text-black"></i>`;
+
       const lojaSelect = document.getElementById('add-emp-loja');
       lojaSelect.innerHTML = '';
-
       (rawData.stores || []).forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.loja_num;
@@ -1812,8 +1832,105 @@
         lojaSelect.appendChild(opt);
       });
 
+      document.getElementById('add-emp-matricula').value = '';
+      document.getElementById('add-emp-nome').value = '';
+      document.getElementById('add-emp-status').value = 'ATIVO';
+      document.getElementById('add-emp-cpf').value = '';
+      document.getElementById('add-emp-cargo').value = '';
+      document.getElementById('add-emp-area').value = '';
+      document.getElementById('add-emp-lider').value = '';
+      document.getElementById('add-emp-dt-adm').value = '';
+      document.getElementById('add-emp-dt-nasc').value = '';
+      document.getElementById('add-emp-email').value = '';
+      document.getElementById('add-emp-sexo').value = 'MASCULINO';
+      document.getElementById('add-emp-pcd').value = 'NÃO';
+      document.getElementById('add-emp-raca').value = 'NÃO INFORMADO';
+
       document.getElementById('add-emp-filhos-list').innerHTML = '';
       document.getElementById('add-employee-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function openEditEmployeeModal(empId) {
+      const emp = (rawData.employees || []).find(e => e.id === empId);
+      if (!emp) return;
+
+      document.getElementById('edit-emp-id').value = emp.id;
+      document.getElementById('emp-modal-title').innerText = `Editar Colaborador`;
+      document.getElementById('emp-modal-subtitle').innerText = `Atualize os dados cadastrais de ${emp.nome}`;
+      document.getElementById('btn-save-emp').innerText = 'Salvar Alterações';
+
+      const iconEl = document.getElementById('emp-modal-icon');
+      iconEl.className = "w-9 h-9 rounded-xl bg-amber-400 text-black font-black flex items-center justify-center";
+      iconEl.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-black"></i>`;
+
+      const lojaSelect = document.getElementById('add-emp-loja');
+      lojaSelect.innerHTML = '';
+      (rawData.stores || []).forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.loja_num;
+        opt.innerText = `Loja ${s.loja_num} - ${s.nome_loja}`;
+        if (String(s.loja_num).trim() === String(emp.loja_num).trim()) {
+          opt.selected = true;
+        }
+        lojaSelect.appendChild(opt);
+      });
+
+      document.getElementById('add-emp-matricula').value = emp.matricula || '';
+      document.getElementById('add-emp-nome').value = emp.nome || '';
+      document.getElementById('add-emp-status').value = emp.status.includes('DESLIG') ? 'DESLIGADO' : 'ATIVO';
+      document.getElementById('add-emp-cpf').value = emp.cpf || '';
+      document.getElementById('add-emp-cargo').value = emp.cargo || '';
+      document.getElementById('add-emp-area').value = emp.area || '';
+      document.getElementById('add-emp-lider').value = emp.lider_direto || '';
+      document.getElementById('add-emp-dt-adm').value = emp.dt_admissao || '';
+      document.getElementById('add-emp-dt-nasc').value = emp.dt_nascimento || '';
+      document.getElementById('add-emp-email').value = emp.email || '';
+      document.getElementById('add-emp-sexo').value = emp.sexo || 'MASCULINO';
+      document.getElementById('add-emp-pcd').value = emp.pcd || 'NÃO';
+      document.getElementById('add-emp-raca').value = emp.raca_etnia || 'NÃO INFORMADO';
+
+      const container = document.getElementById('add-emp-filhos-list');
+      container.innerHTML = '';
+      if (emp.filhos && emp.filhos.length > 0) {
+        emp.filhos.forEach((f, idx) => {
+          const row = document.createElement('div');
+          row.className = "grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-2.5 rounded-xl border text-xs relative group";
+          row.innerHTML = `
+            <div>
+              <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Nome do Filho ${idx + 1}</label>
+              <input type="text" class="filho-nome w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400" value="${f.nome || ''}" placeholder="Nome da criança">
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Sexo Biológico</label>
+              <select class="filho-sexo w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400">
+                <option value="MASCULINO" ${f.sexo === 'MASCULINO' ? 'selected' : ''}>MASCULINO</option>
+                <option value="FEMININO" ${f.sexo === 'FEMININO' ? 'selected' : ''}>FEMININO</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="flex-1">
+                <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Data Nascimento</label>
+                <input type="text" class="filho-nasc w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400" value="${f.data_nascimento || ''}" placeholder="DD/MM/AAAA">
+              </div>
+              <button type="button" onclick="this.closest('.grid').remove()" class="mt-4 p-1.5 text-slate-400 hover:text-rose-500 transition" title="Remover filho">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      document.getElementById('add-employee-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function triggerEditFromDetailsModal() {
+      if (!currentViewingEmpId) return;
+      const empId = currentViewingEmpId;
+      closeModal();
+      openEditEmployeeModal(empId);
     }
 
     function closeAddEmployeeModal() {
@@ -1853,6 +1970,7 @@
 
     async function handleEmployeeFormSubmit(e) {
       e.preventDefault();
+      const emp_id = document.getElementById('edit-emp-id').value;
       const loja_num = document.getElementById('add-emp-loja').value;
       const storeObj = (rawData.stores || []).find(s => s.loja_num === loja_num);
       const nome_loja = storeObj ? storeObj.nome_loja : `Loja ${loja_num}`;
@@ -1869,6 +1987,7 @@
       });
 
       const payload = {
+        id: emp_id || undefined,
         loja_num,
         nome_loja,
         matricula: document.getElementById('add-emp-matricula').value.trim(),
@@ -1896,9 +2015,9 @@
         const data = await res.json();
         if (data.success) {
           closeAddEmployeeModal();
-          fetchData();
+          await fetchData();
         } else {
-          alert("Erro ao cadastrar colaborador: " + (data.message || 'Erro no servidor'));
+          alert("Erro ao salvar colaborador: " + (data.message || 'Erro no servidor'));
         }
       } catch (err) {
         alert("Erro ao conectar ao servidor.");
@@ -2124,6 +2243,7 @@
       const emp = (rawData.employees || []).find(e => e.id === empId);
       if (!emp) return;
 
+      currentViewingEmpId = empId;
       const initials = emp.nome ? emp.nome.split(' ').map(n=>n[0]).slice(0,2).join('') : '??';
       document.getElementById('modal-avatar').innerText = initials;
       document.getElementById('modal-emp-nome').innerText = emp.nome;
@@ -2165,9 +2285,11 @@
       }
 
       document.getElementById('employee-modal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeModal() {
+      currentViewingEmpId = null;
       document.getElementById('employee-modal').classList.add('hidden');
     }
   </script>
