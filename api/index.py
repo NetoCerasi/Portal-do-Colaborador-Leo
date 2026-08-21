@@ -136,7 +136,7 @@ class handler(BaseHTTPRequestHandler):
             self._send_json(response_data)
 
         elif path in ['/api/users', '/api/users.py']:
-            users_raw = query_d1('SELECT id, nome, email, role, stores FROM users;')
+            users_raw = query_d1('SELECT id, nome, email, role, stores, must_change_password FROM users;')
             users = []
             for u in users_raw:
                 try:
@@ -148,7 +148,8 @@ class handler(BaseHTTPRequestHandler):
                     'nome': u.get('nome'),
                     'email': u.get('email'),
                     'role': u.get('role'),
-                    'stores': st
+                    'stores': st,
+                    'must_change_password': bool(u.get('must_change_password', 1))
                 })
             self._send_json(users)
 
@@ -176,12 +177,14 @@ class handler(BaseHTTPRequestHandler):
             if (email == 'admin@leomadeiras.com.br' and senha == 'admin') or (email == 'admin' and senha == 'admin'):
                 return self._send_json({
                     'success': True,
+                    'must_change_password': False,
                     'user': {
                         'id': 'usr_admin',
                         'nome': 'Neto Cerasi (Admin)',
                         'email': 'admin@leomadeiras.com.br',
                         'role': 'ADMIN',
-                        'stores': ['ALL']
+                        'stores': ['ALL'],
+                        'must_change_password': False
                     }
                 })
 
@@ -191,21 +194,67 @@ class handler(BaseHTTPRequestHandler):
                         stores_list = json.loads(u.get('stores') or '["ALL"]')
                     except:
                         stores_list = ['ALL']
+                    
+                    must_change = bool(u.get('must_change_password', 1))
+                    
+                    # If must_change_password, require change before allowing full session
                     return self._send_json({
                         'success': True,
+                        'must_change_password': must_change,
                         'user': {
                             'id': u.get('id'),
                             'nome': u.get('nome'),
                             'email': u.get('email'),
                             'role': u.get('role'),
-                            'stores': stores_list
+                            'stores': stores_list,
+                            'must_change_password': must_change
                         }
                     })
 
             return self._send_json({'success': False, 'message': 'E-mail ou senha incorretos.'}, status=401)
 
+        elif path in ['/api/change-password', '/api/change-password.py']:
+            email = payload.get('email', '').strip().lower()
+            nova_senha = payload.get('nova_senha', '').strip()
+            senha_atual = payload.get('senha_atual', '').strip()
+            
+            if not email or not nova_senha:
+                return self._send_json({'success': False, 'message': 'Dados incompletos.'}, status=400)
+            
+            if len(nova_senha) < 4:
+                return self._send_json({'success': False, 'message': 'A nova senha deve ter no mínimo 4 caracteres.'}, status=400)
+
+            # Verify current password
+            users_raw = query_d1('SELECT * FROM users WHERE LOWER(email) = ?;', [email])
+            if not users_raw:
+                return self._send_json({'success': False, 'message': 'Usuário não encontrado.'}, status=404)
+            
+            u = users_raw[0]
+            if senha_atual and str(u.get('senha', '')).strip() != senha_atual:
+                return self._send_json({'success': False, 'message': 'Senha atual incorreta.'}, status=401)
+
+            # Update password and clear must_change_password flag
+            query_d1('UPDATE users SET senha = ?, must_change_password = 0 WHERE id = ?;', [nova_senha, u.get('id')])
+            
+            try:
+                stores_list = json.loads(u.get('stores') or '["ALL"]')
+            except:
+                stores_list = ['ALL']
+
+            return self._send_json({
+                'success': True,
+                'message': 'Senha alterada com sucesso!',
+                'user': {
+                    'id': u.get('id'),
+                    'nome': u.get('nome'),
+                    'email': u.get('email'),
+                    'role': u.get('role'),
+                    'stores': stores_list,
+                    'must_change_password': False
+                }
+            })
+
         elif path in ['/api/employees/add', '/api/employees/add.py', '/api/employees', '/api/employees.py']:
-            # Save new employee to Cloudflare D1
             emp = payload
             emp_id = emp.get('id') or f"emp_{int(datetime.datetime.now().timestamp())}"
             sql = '''INSERT OR REPLACE INTO employees 
@@ -235,8 +284,20 @@ class handler(BaseHTTPRequestHandler):
         elif path in ['/api/users/save', '/api/users/save.py', '/api/users', '/api/users.py']:
             u = payload
             u_id = u.get('id') or f"usr_{int(datetime.datetime.now().timestamp())}"
-            sql = '''INSERT OR REPLACE INTO users (id, nome, email, senha, role, stores) VALUES (?, ?, ?, ?, ?, ?);'''
-            params = [u_id, u.get('nome', ''), u.get('email', ''), u.get('senha', ''), u.get('role', 'USER'), json.dumps(u.get('stores', []))]
+            # Check if existing user or new user
+            existing = query_d1('SELECT * FROM users WHERE id = ?;', [u_id])
+            if existing:
+                # If editing, only update senha if provided
+                if u.get('senha'):
+                    sql = '''UPDATE users SET nome = ?, email = ?, senha = ?, role = ?, stores = ?, must_change_password = ? WHERE id = ?;'''
+                    params = [u.get('nome', ''), u.get('email', ''), u.get('senha', ''), u.get('role', 'USER'), json.dumps(u.get('stores', [])), 1 if u.get('must_change_password') else 0, u_id]
+                else:
+                    sql = '''UPDATE users SET nome = ?, email = ?, role = ?, stores = ?, must_change_password = ? WHERE id = ?;'''
+                    params = [u.get('nome', ''), u.get('email', ''), u.get('role', 'USER'), json.dumps(u.get('stores', [])), 1 if u.get('must_change_password') else 0, u_id]
+            else:
+                sql = '''INSERT INTO users (id, nome, email, senha, role, stores, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?);'''
+                params = [u_id, u.get('nome', ''), u.get('email', ''), u.get('senha', '1234'), u.get('role', 'USER'), json.dumps(u.get('stores', [])), 1]
+            
             query_d1(sql, params)
             return self._send_json({'success': True, 'user': u})
 
