@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal do Parceiro Leo | Plataforma de Gestão</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            endoLime: {
+              300: '#d9ff36',
+              400: '#c0f200',
+              500: '#a6d900',
+              600: '#86b300'
+            },
+            endoDark: {
+              950: '#090b0e',
+              900: '#141820',
+              850: '#1c212c',
+              800: '#262d3b',
+              700: '#323b4e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .dark ::-webkit-scrollbar-thumb { background: #262d3b; border-radius: 4px; }
+    html:not(.dark) ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .brand-lime-glow {
+      box-shadow: 0 0 20px -4px rgba(192, 242, 0, 0.4);
+    }
+
+    .filter-panel-glow {
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 0 15px -3px rgba(192, 242, 0, 0.08);
+    }
+    .dark .filter-panel-glow {
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 15px -3px rgba(192, 242, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-100 text-slate-900 dark:bg-endoDark-950 dark:text-slate-100 transition-colors duration-200 flex flex-col overflow-x-hidden">
+
+  <!-- Header Bar -->
+  <header class="bg-white border-b border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800/80 sticky top-0 z-30 px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-sm dark:shadow-xl transition-colors duration-200">
+    <div class="flex items-center gap-4">
+      
+      <!-- Logo Mark -->
+      <div class="flex items-center gap-3">
+        <img src="/leo_logo.png" alt="Leo Logo" class="w-11 h-11 rounded-xl shadow-md object-contain">
+        <div>
+          <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
+            Portal do Parceiro <span class="text-lime-600 dark:text-endoLime-400">Leo</span>
+          </h1>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Controls & User Info -->
+    <div class="flex items-center gap-3">
+      
+      <!-- Add Employee Button -->
+      <button onclick="openAddEmployeeModal()" class="px-3.5 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-xs font-black text-black shadow-md shadow-endoLime-400/20 flex items-center gap-1.5 transition transform active:scale-95 brand-lime-glow">
+        <i data-lucide="user-plus" class="w-4 h-4 text-black"></i>
+        <span>+ Novo Colaborador</span>
+      </button>
+
+      <!-- Manage Users Button (Admin Only) -->
+      <button id="btn-manage-users" onclick="openManageUsersModal()" class="hidden px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 dark:border-endoDark-800 text-xs font-bold flex items-center gap-1.5 transition">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"></i>
+        <span>Gerenciar Usuários</span>
+      </button>
+
+      <!-- Export Excel Button -->
+      <a href="/api/export" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-500/40 text-xs font-black flex items-center gap-1.5 transition shadow-sm" title="Baixar planilha formatada diretamente em colunas no Microsoft Excel">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+        <span>Exportar Excel</span>
+      </a>
+
+      <!-- Dark/Light Theme Switcher Button -->
+      <button onclick="toggleTheme()" id="btn-theme-switcher" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 border border-slate-300 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:border-endoDark-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition shadow-sm" title="Alternar Tema Claro / Escuro">
+        <i data-lucide="sun" id="theme-icon-sun" class="w-4.5 h-4.5 text-amber-500 hidden"></i>
+        <i data-lucide="moon" id="theme-icon-moon" class="w-4.5 h-4.5 text-cyan-500 dark:text-cyan-400"></i>
+      </button>
+
+      <!-- User Profile Badge & Logout -->
+      <div class="flex items-center gap-2.5 pl-3 border-l border-slate-300 dark:border-endoDark-800">
+        <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-endoLime-400 text-black font-black text-xs flex items-center justify-center shadow">
+          NC
+        </div>
+        <div class="hidden sm:block text-left">
+          <div id="user-display-name" class="text-xs font-bold text-slate-900 dark:text-white leading-tight">Carregando...</div>
+          <div id="user-display-role" class="text-[10px] text-lime-600 dark:text-endoLime-400 font-semibold leading-tight">-</div>
+        </div>
+        <button onclick="logoutUser()" class="p-1.5 text-slate-400 hover:text-rose-500 transition" title="Sair do sistema">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 px-4 lg:px-8 py-6 space-y-6 max-w-[1800px] mx-auto w-full">
+
+    <!-- Filter Bar -->
+    <section class="bg-white border border-slate-200 dark:bg-gradient-to-b dark:from-endoDark-900 dark:to-[#12161f] dark:border-endoDark-700/80 rounded-2xl p-5 filter-panel-glow space-y-4 relative z-30 transition-colors duration-200">
+      <div class="w-full h-1 absolute left-0 top-0 bg-gradient-to-r from-endoLime-400/80 via-emerald-400/40 to-transparent rounded-t-2xl"></div>
+
+      <div class="flex items-center justify-between pt-0.5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-5 rounded-full bg-endoLime-400 shadow-md shadow-endoLime-400/40"></div>
+          <h2 class="text-xs font-black text-slate-900 dark:text-white tracking-widest uppercase">
+            FILTROS
+          </h2>
+        </div>
+        <button onclick="clearFilters()" class="text-xs text-slate-500 dark:text-slate-400 hover:text-lime-600 dark:hover:text-endoLime-400 transition flex items-center gap-1.5 font-bold bg-slate-100 border-slate-300 dark:bg-endoDark-950 dark:border-endoDark-800 px-3 py-1.5 rounded-xl border">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Resetar Filtros
+        </button>
+      </div>
+
+      <!-- Filters Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+        
+        <!-- Search Box -->
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Busca Rápida</label>
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5"></i>
+            <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Nome, CPF ou ID..." class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl pl-8 pr-2.5 py-2 focus:outline-none focus:border-endoLime-400 focus:ring-1 focus:ring-endoLime-400 placeholder-slate-400 dark:placeholder-slate-500 transition shadow-inner">
+          </div>
+        </div>
+
+        <!-- Store Filter -->
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Loja / Unidade</label>
+          <select id="filter-store" onchange="applyFilters()" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-endoLime-400 transition shadow-inner">
+            <option value="">Todas as Lojas</option>
+            <option value="2050">Loja 2050 - BRASÍLIA</option>
+            <option value="2051">Loja 2051 - CAMPINAS</option>
+            <option value="2052">Loja 2052 - VALPARAÍSO DE GOIÁS</option>
+            <option value="2061">Loja 2061 - GOIÂNIA</option>
+            <option value="2075">Loja 2075 - GOIÂNIA</option>
+            <option value="2100">Loja 2100 - SÃO LUÍS</option>
+            <option value="2101">Loja 2101 - SÃO LUÍS COHAMA</option>
+            <option value="2102">Loja 2102 - SANTA INÊS</option>
+            <option value="2103">Loja 2103 - IMPERATRIZ</option>
+            <option value="2125">Loja 2125 - CUIABÁ</option>
+            <option value="2126">Loja 2126 - VÁRZEA GRANDE</option>
+            <option value="2127">Loja 2127 - VÁRZEA GRANDE</option>
+            <option value="2400">Loja 2400 - RIBEIRÃO PRETO</option>
+            <option value="2425">Loja 2425 - CAMPINAS</option>
+            <option value="2426">Loja 2426 - VÁRZEA GRANDE</option>
+            <option value="2427">Loja 2427 - CUIABÁ</option>
+            <option value="2429">Loja 2429 - CUIABÁ</option>
+            <option value="2475">Loja 2475 - CURITIBA</option>
+            <option value="2550">Loja 2550 - TERESINA</option>
+            <option value="2551">Loja 2551 - TERESINA</option>
+            <option value="2552">Loja 2552 - TERESINA</option>
+            <option value="2575">Loja 2575 - UBERLÂNDIA</option>
+            <option value="2700">Loja 2700 - PETROLINA</option>
+            <option value="2775">Loja 2775 - CARUARU</option>
+            <option value="2800">Loja 2800 - RECIFE</option>
+            <option value="2805">Loja 2805 - RECIFE</option>
+            <option value="2808">Loja 2808 - CAMPINA GRANDE</option>
+            <option value="2809">Loja 2809 - CABEDELO</option>
+            <option value="2810 CD">Loja 2810 CD - JOÃO PESSOA (CD)</option>
+            <option value="2825">Loja 2825 - MACEIÓ</option>
+            <option value="2900">Loja 2900 - BELO HORIZONTE</option>
+            <option value="2950">Loja 2950 - CONTAGEM</option>
+            <option value="2952">Loja 2952 - VENDA NOVA</option>
+            <option value="2955">Loja 2955 - IPATINGA</option>
+            <option value="2956">Loja 2956 - JUIZ DE FORA</option>
+            <option value="2962">Loja 2962 - UBERABA</option>
+            <option value="2963">Loja 2963 - SETE LAGOAS</option>
+            <option value="2964">Loja 2964 - CASTELO</option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Status</label>
+          <select id="filter-status" onchange="applyFilters()" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-endoLime-400 transition shadow-inner">
+            <option value="ATIVO" selected>Apenas Ativos</option>
+            <option value="ALL">Todos os Status</option>
+            <option value="DESLIGADO">Apenas Desligados</option>
+          </select>
+        </div>
+
+        <!-- Cargo Filter -->
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Cargo / Função</label>
+          <select id="filter-cargo" onchange="applyFilters()" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-endoLime-400 transition shadow-inner">
+            <option value="">Todos os Cargos</option>
+          </select>
+        </div>
+
+        <!-- Mae/Pai Filter -->
+        <div>
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Mãe / Pai?</label>
+          <select id="filter-parent" onchange="applyFilters()" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-endoLime-400 transition shadow-inner">
+            <option value="">Todos</option>
+            <option value="SIM">Sim (Com Filhos)</option>
+            <option value="NÃO">Não</option>
+          </select>
+        </div>
+
+        <!-- Admission Date Excel Tree Filter -->
+        <div class="relative z-30" id="dropdown-excel-date-wrapper">
+          <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-300 uppercase tracking-wider mb-1">Data de Admissão</label>
+          <button type="button" onclick="toggleExcelDateDropdown()" id="btn-excel-date-trigger" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 flex items-center justify-between focus:outline-none focus:border-endoLime-400 transition shadow-inner">
+            <span id="label-excel-date" class="truncate font-bold text-lime-600 dark:text-endoLime-400">Todas as datas</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 ml-1 flex-shrink-0"></i>
+          </button>
+
+          <div id="menu-excel-date-tree" class="hidden absolute left-0 right-0 lg:-left-24 lg:w-72 mt-1.5 bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-700 rounded-xl shadow-2xl z-50 p-2.5 space-y-2 border">
+            <div class="relative">
+              <i data-lucide="search" class="w-3 h-3 text-slate-400 dark:text-slate-500 absolute left-2.5 top-2.5"></i>
+              <input type="text" id="search-excel-date-tree" oninput="onSearchDateTree(this.value)" placeholder="Pesquisar..." class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-200 text-[11px] rounded-lg pl-7 pr-2 py-1.5 focus:outline-none focus:border-endoLime-400">
+            </div>
+
+            <div class="border-b border-slate-200 dark:border-endoDark-800 pb-1">
+              <label class="flex items-center gap-2 px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-endoDark-800 rounded cursor-pointer text-xs font-black text-lime-600 dark:text-endoLime-400">
+                <input type="checkbox" id="chk-date-tree-all" onchange="toggleSelectAllDateTree()" checked class="rounded border-slate-300 dark:border-slate-700 text-endoLime-400 focus:ring-0">
+                <span>(Selecionar Tudo)</span>
+              </label>
+            </div>
+
+            <div id="excel-date-tree-nodes" class="max-h-60 overflow-y-auto space-y-1 text-xs select-none pr-1"></div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-2 text-[10px]">
+              <button onclick="toggleExcelDateDropdown()" class="px-2.5 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-800 dark:hover:bg-endoDark-700 dark:text-slate-300 font-bold transition">Fechar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Filter Count Indicator -->
+        <div class="flex items-end">
+          <div class="text-[11px] text-slate-700 dark:text-slate-300 font-bold flex items-center gap-1.5 bg-slate-50 border-slate-300 dark:bg-endoDark-950 dark:border-endoDark-700 px-3 py-2 rounded-xl border w-full shadow-inner truncate">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-lime-600 dark:text-endoLime-400 flex-shrink-0"></i>
+            <span class="truncate">Filtrados: <b id="adm-filter-count" class="text-lime-600 dark:text-endoLime-400 font-black">0</b></span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 relative z-10">
+
+      <!-- Total Base Card -->
+      <div class="bg-white dark:bg-endoDark-900 rounded-2xl p-5 border border-slate-200 dark:border-endoDark-800 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-endoLime-400/50 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-endoLime-400"></div>
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">Total Base</span>
+          <div class="p-2 rounded-xl bg-endoLime-400/20 text-lime-600 dark:text-endoLime-400">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-total" class="text-2.5xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">0</div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-tight block">Colaboradores registrados</p>
+        </div>
+      </div>
+
+      <!-- Ativos Card -->
+      <div class="bg-emerald-50/70 dark:bg-[#0c2b20] rounded-2xl p-5 border border-emerald-300 dark:border-emerald-500/40 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-emerald-400 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-emerald-500 dark:bg-emerald-400"></div>
+        <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">Ativos</span>
+          <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-active" class="text-2.5xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400 tracking-tight leading-none">0</div>
+          <p id="kpi-active-pct" class="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold leading-tight block">0% da operação</p>
+        </div>
+      </div>
+
+      <!-- Desligados Card -->
+      <div class="bg-rose-50/70 dark:bg-[#2d0e17] rounded-2xl p-5 border border-rose-300 dark:border-rose-500/40 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-rose-400 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-rose-500"></div>
+        <div class="flex items-center justify-between text-rose-700 dark:text-rose-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">Desligados</span>
+          <div class="p-2 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400">
+            <i data-lucide="user-x" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-terminated" class="text-2.5xl sm:text-3xl font-black text-rose-700 dark:text-rose-400 tracking-tight leading-none">0</div>
+          <p id="kpi-terminated-pct" class="text-[11px] text-rose-800 dark:text-rose-300 font-bold leading-tight block">0% turnover</p>
+        </div>
+      </div>
+
+      <!-- Mães/Pais Card -->
+      <div class="bg-amber-50/70 dark:bg-[#301c0c] rounded-2xl p-5 border border-amber-300 dark:border-amber-500/40 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-amber-400 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-amber-500 dark:bg-amber-400"></div>
+        <div class="flex items-center justify-between text-amber-700 dark:text-amber-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">Mães / Pais</span>
+          <div class="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400">
+            <i data-lucide="heart" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-parents" class="text-2.5xl sm:text-3xl font-black text-amber-700 dark:text-amber-400 tracking-tight leading-none">0</div>
+          <p id="kpi-parents-pct" class="text-[11px] text-amber-800 dark:text-amber-300 font-bold leading-tight block">0% com filhos</p>
+        </div>
+      </div>
+
+      <!-- Total Filhos Card -->
+      <div class="bg-cyan-50/70 dark:bg-[#0d2530] rounded-2xl p-5 border border-cyan-300 dark:border-cyan-500/40 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-cyan-400 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-cyan-500 dark:bg-cyan-400"></div>
+        <div class="flex items-center justify-between text-cyan-700 dark:text-cyan-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">Total Filhos</span>
+          <div class="p-2 rounded-xl bg-cyan-500/20 text-cyan-700 dark:text-cyan-400">
+            <i data-lucide="baby" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-children" class="text-2.5xl sm:text-3xl font-black text-cyan-700 dark:text-cyan-400 tracking-tight leading-none">0</div>
+          <p class="text-[11px] text-cyan-800 dark:text-cyan-300 font-bold leading-tight block">Idade exata <span id="kpi-today-badge">Hoje</span></p>
+        </div>
+      </div>
+
+      <!-- PCD Card -->
+      <div class="bg-indigo-50/70 dark:bg-[#191430] rounded-2xl p-5 border border-indigo-300 dark:border-indigo-500/40 shadow-sm dark:shadow-xl flex flex-col justify-between min-h-[125px] hover:border-indigo-400 transition relative overflow-hidden group">
+        <div class="w-1.5 h-full absolute left-0 top-0 bg-indigo-500 dark:bg-indigo-400"></div>
+        <div class="flex items-center justify-between text-indigo-700 dark:text-indigo-400 mb-2 pl-2">
+          <span class="text-[11px] font-black uppercase tracking-wider">PCD</span>
+          <div class="p-2 rounded-xl bg-indigo-500/20 text-indigo-700 dark:text-indigo-400">
+            <i data-lucide="accessibility" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="pl-2 space-y-1">
+          <div id="kpi-pcd" class="text-2.5xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-400 tracking-tight leading-none">0</div>
+          <p id="kpi-pcd-pct" class="text-[11px] text-indigo-800 dark:text-indigo-300 font-bold leading-tight block">0% diversidade</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Navigation Tabs Switcher -->
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 p-1.5 rounded-2xl border flex items-center justify-between shadow-sm dark:shadow-xl transition-colors duration-200">
+      <nav class="flex items-center space-x-2 text-xs font-black w-full overflow-x-auto">
+        <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-5 py-2.5 rounded-xl bg-endoLime-400 text-black shadow-md shadow-endoLime-400/20 flex items-center gap-2 transition">
+          <i data-lucide="bar-chart-2" class="w-4 h-4 text-black"></i> Indicadores Gerais
+        </button>
+        <button onclick="switchTab('children-ages')" id="tab-btn-children-ages" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-endoDark-850 dark:text-slate-400 dark:hover:text-white flex items-center gap-2 transition">
+          <i data-lucide="baby" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i> Contagem de Idades dos Filhos (Idade Exata Hoje)
+        </button>
+        <button onclick="switchTab('employees')" id="tab-btn-employees" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-endoDark-850 dark:text-slate-400 dark:hover:text-white flex items-center gap-2 transition">
+          <i data-lucide="list-filter" class="w-4 h-4"></i> Lista de Colaboradores (<span id="filtered-count-badge">0</span>)
+        </button>
+        <button onclick="switchTab('stores')" id="tab-btn-stores" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-endoDark-850 dark:text-slate-400 dark:hover:text-white flex items-center gap-2 transition">
+          <i data-lucide="store" class="w-4 h-4"></i> Lojas Parceiras (<span id="stores-count-tab">0</span>)
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab 1: Analytics / Gráficos -->
+    <section id="tab-analytics" class="space-y-6">
+      <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl space-y-4 transition-colors duration-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="building-2" class="w-4 h-4 text-lime-600 dark:text-endoLime-400"></i>
+            Colaboradores por Loja (Ativos vs Desligados)
+          </h3>
+          <span class="text-xs text-slate-500 font-semibold">Top Maiores Lojas</span>
+        </div>
+        <div class="h-80">
+          <canvas id="chart-stores"></canvas>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl space-y-4 transition-colors duration-200">
+          <h3 class="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="baby" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+            Resumo de Idades Exatas dos Filhos (Hoje)
+          </h3>
+          <div class="h-64">
+            <canvas id="chart-children-age"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl space-y-4 transition-colors duration-200">
+          <h3 class="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="users-round" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
+            Gênero / Sexo Biológico
+          </h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chart-sexo"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Detailed Children Age Breakdown -->
+    <section id="tab-children-ages" class="hidden space-y-6">
+      <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-6 border shadow-sm dark:shadow-xl space-y-5 transition-colors duration-200">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-endoDark-800 pb-4">
+          <div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <i data-lucide="baby" class="w-5 h-5 text-amber-500 dark:text-amber-400"></i>
+              Contagem Detalhada da Idade Exata das Crianças em Toda a Base (Hoje: <span id="today-date-badge" class="text-amber-600 dark:text-amber-400 font-black">20/08/2026</span>)
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Idade calculada com precisão de dia, mês e ano no dia de hoje.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 text-xs font-black flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              Total na Base: <span id="children-total-count-badge" class="text-slate-900 dark:text-white text-sm font-black">0</span> crianças
+            </div>
+          </div>
+        </div>
+
+        <div class="h-72">
+          <canvas id="chart-exact-children-age"></canvas>
+        </div>
+
+        <div id="children-age-cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 pt-2"></div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Employees List Table -->
+    <section id="tab-employees" class="hidden space-y-4">
+      <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl border shadow-sm dark:shadow-xl overflow-hidden transition-colors duration-200">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 dark:bg-endoDark-950 dark:text-slate-400 font-black border-b border-slate-200 dark:border-endoDark-800 uppercase tracking-wider">
+              <tr>
+                <th class="py-3.5 px-4">Loja</th>
+                <th class="py-3.5 px-4">Colaborador</th>
+                <th class="py-3.5 px-4">CPF</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4">Cargo / Área</th>
+                <th class="py-3.5 px-4">Data Admissão</th>
+                <th class="py-3.5 px-4 text-center">Filhos</th>
+                <th class="py-3.5 px-4 text-right">Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="employees-tbody" class="divide-y divide-slate-200 dark:divide-endoDark-800 text-slate-800 dark:text-slate-200"></tbody>
+          </table>
+        </div>
+
+        <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div>
+            Mostrando <span id="page-start-idx" class="font-bold text-slate-900 dark:text-slate-200">0</span> até <span id="page-end-idx" class="font-bold text-slate-900 dark:text-slate-200">0</span> de <span id="page-total-count" class="font-bold text-slate-900 dark:text-slate-200">0</span> registros
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="prevPage()" id="btn-prev-page" class="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 dark:border-endoDark-800 font-bold transition">Anterior</button>
+            <span class="text-slate-700 dark:text-slate-300 font-bold px-2">Página <span id="current-page-num">1</span> de <span id="total-pages-num">1</span></span>
+            <button onclick="nextPage()" id="btn-next-page" class="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-300 dark:border-endoDark-800 font-bold transition">Próxima</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Stores List Cards -->
+    <section id="tab-stores" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
+
+  </main>
+
+  <!-- LOGIN MODAL -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-endoDark-950/95 backdrop-blur-lg z-50 flex items-center justify-center p-4">
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-700 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6 relative overflow-hidden border">
+      <div class="w-full h-1.5 absolute left-0 top-0 bg-endoLime-400"></div>
+
+      <div class="text-center space-y-2">
+        <img src="/leo_logo.png" alt="Leo Logo" class="w-14 h-14 rounded-2xl shadow-lg object-contain mx-auto">
+        <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Portal do Parceiro <span class="text-lime-600 dark:text-endoLime-400">Leo</span></h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Acesse com seu e-mail e senha cadastrados para visualizar e gerenciar suas lojas</p>
+      </div>
+
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">E-mail de Acesso</label>
+          <input type="email" id="login-email" required placeholder="seu.email@leomadeiras.com.br" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-endoLime-400">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Senha</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-endoLime-400">
+        </div>
+
+        <div id="login-error-msg" class="hidden text-xs text-rose-600 dark:text-rose-400 font-bold text-center bg-rose-50 dark:bg-rose-500/10 p-2.5 rounded-xl border border-rose-200 dark:border-rose-500/20"></div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-endoLime-400/20 transition brand-lime-glow">
+          Entrar no Sistema
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL CADASTRO DE COLABORADOR -->
+  <div id="add-employee-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-endoDark-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-endoDark-800 flex items-center justify-between bg-slate-50 dark:bg-endoDark-950/50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-endoLime-400 text-black font-black flex items-center justify-center">
+            <i data-lucide="user-plus" class="w-5 h-5 text-black"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white">Cadastrar Novo Colaborador</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Preencha as informações do colaborador para registrar na loja</p>
+          </div>
+        </div>
+        <button onclick="closeAddEmployeeModal()" class="w-8 h-8 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleEmployeeFormSubmit(event)" class="p-6 space-y-4 overflow-y-auto flex-1">
+        
+        <!-- Loja & Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-3.5 rounded-2xl border">
+          <div>
+            <label class="block text-[10px] font-black text-lime-700 dark:text-endoLime-400 uppercase tracking-wider mb-1">Loja / Unidade *</label>
+            <select id="add-emp-loja" required class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+              <!-- Populated with authorized stores -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Status Funcionário *</label>
+            <select id="add-emp-status" required class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+              <option value="ATIVO">ATIVO</option>
+              <option value="DESLIGADO">DESLIGADO</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Matrícula / ID</label>
+            <input type="text" id="add-emp-matricula" placeholder="12345" class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+        </div>
+
+        <!-- Personal Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Nome Completo *</label>
+            <input type="text" id="add-emp-nome" required placeholder="Digite o nome completo..." class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">CPF</label>
+            <input type="text" id="add-emp-cpf" placeholder="000.000.000-00" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cargo / Função</label>
+            <input type="text" id="add-emp-cargo" placeholder="Ex: Vendedor Parceiro" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Área / Setor</label>
+            <input type="text" id="add-emp-area" placeholder="Ex: Loja Brasília" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Líder Direto</label>
+            <input type="text" id="add-emp-lider" placeholder="Nome do Gestor" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Data de Admissão</label>
+            <input type="text" id="add-emp-dt-adm" placeholder="DD/MM/AAAA" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Data de Nascimento</label>
+            <input type="text" id="add-emp-dt-nasc" placeholder="DD/MM/AAAA" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">E-mail</label>
+            <input type="email" id="add-emp-email" placeholder="colaborador@email.com" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Sexo Biológico</label>
+            <select id="add-emp-sexo" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+              <option value="MASCULINO">MASCULINO</option>
+              <option value="FEMININO">FEMININO</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">PCD?</label>
+            <select id="add-emp-pcd" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+              <option value="NÃO">NÃO</option>
+              <option value="SIM">SIM</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Raça / Etnia</label>
+            <select id="add-emp-raca" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+              <option value="NÃO INFORMADO">NÃO INFORMADO</option>
+              <option value="BRANCA">BRANCA</option>
+              <option value="PARDA">PARDA</option>
+              <option value="PRETA">PRETA</option>
+              <option value="AMARELA">AMARELA</option>
+              <option value="INDÍGENA">INDÍGENA</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filhos / Dependentes Section -->
+        <div class="pt-3 border-t border-slate-200 dark:border-endoDark-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="baby" class="w-4 h-4"></i> Cadastro de Dependentes / Filhos
+            </h4>
+            <button type="button" onclick="addFilhoFormRow()" class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 text-xs font-bold hover:bg-amber-100 transition flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Adicionar Filho
+            </button>
+          </div>
+
+          <div id="add-emp-filhos-list" class="space-y-2"></div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeAddEmployeeModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black font-black text-xs uppercase tracking-wider brand-lime-glow">Salvar Colaborador</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL GERENCIAR USUÁRIOS -->
+  <div id="manage-users-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-endoDark-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-endoDark-800 flex items-center justify-between bg-slate-50 dark:bg-endoDark-950/50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-400 text-black font-black flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-5 h-5 text-black"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white">Gerenciamento de Usuários</h3>
+          </div>
+        </div>
+        <button onclick="closeManageUsersModal()" class="w-8 h-8 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6 overflow-y-auto flex-1">
+        
+        <!-- User Creation / Edit Form -->
+        <form onsubmit="handleUserFormSubmit(event)" class="bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-4.5 rounded-2xl border space-y-4">
+          <input type="hidden" id="edit-user-id">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-endoDark-800 pb-2">
+            <h4 id="user-form-title" class="text-xs font-black text-lime-700 dark:text-endoLime-400 uppercase tracking-wider">Cadastrar Novo Usuário</h4>
+            <button type="button" onclick="resetUserForm()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-endoDark-850 dark:hover:bg-endoDark-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 border border-slate-300 dark:border-endoDark-700 shadow-sm">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"></i>
+              <span>Limpar Formulário</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Nome Completo *</label>
+              <input type="text" id="user-input-nome" oninput="onUserFormInputChange()" required placeholder="Ex: João da Silva" class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">E-mail de Acesso *</label>
+              <input type="email" id="user-input-email" oninput="onUserFormInputChange()" required placeholder="joao@leomadeiras.com.br" class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Senha de Acesso *</label>
+              <input type="password" id="user-input-senha" oninput="onUserFormInputChange()" placeholder="Digitar senha..." class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Tipo de Permissão *</label>
+              <select id="user-input-role" onchange="toggleUserStoresSelection(this.value); onUserFormInputChange();" class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-endoLime-400 font-bold">
+                <option value="USER">Usuário Comum (Acesso por Lojas)</option>
+                <option value="ADMIN">Admin (Acesso a Todas as Lojas)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Stores Checklist Section (Full Width) -->
+          <div class="space-y-1.5" id="wrapper-user-stores-section">
+            <label class="block text-xs font-black text-lime-700 dark:text-endoLime-400 uppercase tracking-wider">
+              Selecione a Loja
+            </label>
+            <div id="user-stores-checklist" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-56 overflow-y-auto bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 p-3 rounded-2xl border">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button type="submit" id="btn-save-user" disabled class="px-5 py-2.5 rounded-xl bg-endoLime-400 text-black font-black text-xs uppercase tracking-wider transition-all duration-200 opacity-40 pointer-events-none cursor-not-allowed">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+
+        <!-- Registered Users Table -->
+        <div class="bg-white border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 rounded-2xl border overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 dark:bg-endoDark-900 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-endoDark-800 uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Usuário</th>
+                <th class="py-3 px-4">E-mail</th>
+                <th class="py-3 px-4">Permissão</th>
+                <th class="py-3 px-4">Lojas Autorizadas</th>
+                <th class="py-3 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody" class="divide-y divide-slate-200 dark:divide-endoDark-800 text-slate-800 dark:text-slate-200"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Details Modal -->
+  <div id="employee-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-endoDark-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-endoDark-800 flex items-center justify-between bg-slate-50 dark:bg-endoDark-950/50">
+        <div class="flex items-center gap-3.5">
+          <div id="modal-avatar" class="w-12 h-12 rounded-2xl bg-endoLime-400 text-black font-black text-lg flex items-center justify-center shadow brand-lime-glow">AB</div>
+          <div>
+            <h3 id="modal-emp-nome" class="text-base font-black text-slate-900 dark:text-white">Nome do Colaborador</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+              <span id="modal-emp-loja" class="text-lime-700 dark:text-endoLime-400 font-bold">Loja 2050 - BRASÍLIA</span>
+              <span>•</span>
+              <span id="modal-emp-cargo">Cargo</span>
+            </p>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6 overflow-y-auto">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 rounded-2xl p-4.5 border">
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Status</span><span id="modal-emp-status" class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">ATIVO</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">CPF</span><span id="modal-emp-cpf" class="text-xs text-slate-900 dark:text-slate-200 font-mono">000.000.000-00</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Matrícula ID</span><span id="modal-emp-matricula" class="text-xs text-slate-900 dark:text-slate-200">12345</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Líder Direto</span><span id="modal-emp-lider" class="text-xs text-slate-900 dark:text-slate-200">-</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Data Admissão</span><span id="modal-emp-admissao" class="text-xs text-slate-900 dark:text-slate-200 font-bold text-lime-700 dark:text-endoLime-400">-</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Data de Nascimento</span><span id="modal-emp-nascimento" class="text-xs text-slate-900 dark:text-slate-200">-</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Raça / Etnia</span><span id="modal-emp-raca" class="text-xs text-slate-900 dark:text-slate-200">-</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">PCD</span><span id="modal-emp-pcd" class="text-xs text-slate-900 dark:text-slate-200">-</span></div>
+          <div><span class="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Instrução</span><span id="modal-emp-instrucao" class="text-xs text-slate-900 dark:text-slate-200 truncate block">-</span></div>
+        </div>
+
+        <div class="space-y-3">
+          <h4 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i data-lucide="baby" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i> Dependentes (Idade Exata Hoje)</span>
+            <span id="modal-emp-children-count" class="text-cyan-700 dark:text-cyan-400 font-bold">0 Filhos</span>
+          </h4>
+          <div id="modal-children-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let currentUser = null;
+    try {
+      currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      if (currentUser && (!currentUser.stores || !Array.isArray(currentUser.stores))) {
+        currentUser.stores = ['ALL'];
+      }
+    } catch(e) {
+      currentUser = null;
+    }
+    let rawData = { stores: [], employees: [], current_year: 2026, today_date: '', admission_years: [] };
+    let filteredEmployees = [];
+    let systemUsersList = [];
+    let currentPage = 1;
+    const pageSize = 15;
+
+    // Excel Date Tree State
+    let dateTreeStructure = {};
+    let selectedTreeDates = new Set();
+    let allTreeDates = new Set();
+
+    let chartStores = null;
+    let chartChildrenAge = null;
+    let chartExactChildrenAge = null;
+    let chartSexo = null;
+
+    const monthFullNames = {
+      '01': 'janeiro', '02': 'fevereiro', '03': 'março',
+      '04': 'abril', '05': 'maio', '06': 'junho',
+      '07': 'julho', '08': 'agosto', '09': 'setembro',
+      '10': 'outubro', '11': 'novembro', '12': 'dezembro'
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initThemeFromStorage();
+      lucide.createIcons();
+      checkAuthSession();
+      setupSSE();
+      setupOutsideClickListeners();
+    });
+
+    function initThemeFromStorage() {
+      const savedTheme = localStorage.getItem('theme');
+      const html = document.documentElement;
+      if (savedTheme === 'light') {
+        html.classList.remove('dark');
+        document.getElementById('theme-icon-sun').classList.remove('hidden');
+        document.getElementById('theme-icon-moon').classList.add('hidden');
+      } else {
+        html.classList.add('dark');
+        document.getElementById('theme-icon-sun').classList.add('hidden');
+        document.getElementById('theme-icon-moon').classList.remove('hidden');
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const sunIcon = document.getElementById('theme-icon-sun');
+      const moonIcon = document.getElementById('theme-icon-moon');
+
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+        localStorage.setItem('theme', 'dark');
+      }
+      renderCharts();
+      renderChildrenAgeTab();
+    }
+
+    function checkAuthSession() {
+      const loginModal = document.getElementById('login-modal');
+      if (!currentUser) {
+        loginModal.classList.remove('hidden');
+      } else {
+        loginModal.classList.add('hidden');
+        updateUserUIHeader();
+        fetchData();
+      }
+    }
+
+    function updateUserUIHeader() {
+      if (!currentUser) return;
+      document.getElementById('user-display-name').innerText = currentUser.nome;
+      document.getElementById('user-display-role').innerText = currentUser.role === 'ADMIN' ? '👑 Admin' : `🏬 Lojas: ${currentUser.stores.join(', ')}`;
+      const initials = currentUser.nome.split(' ').map(n=>n[0]).slice(0,2).join('');
+      document.getElementById('user-avatar-initials').innerText = initials;
+
+      const manageBtn = document.getElementById('btn-manage-users');
+      if (currentUser.role === 'ADMIN') {
+        manageBtn.classList.remove('hidden');
+      } else {
+        manageBtn.classList.add('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const senha = document.getElementById('login-password').value;
+      const errBox = document.getElementById('login-error-msg');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser = data.user;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          checkAuthSession();
+        } else {
+          errBox.innerText = data.message || 'Credenciais inválidas.';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errBox.innerText = 'Erro ao conectar ao servidor.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    function logoutUser() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      checkAuthSession();
+    }
+
+    function setupSSE() {
+      const evtSource = new EventSource("/api/events");
+      evtSource.onmessage = function(e) {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'update' && currentUser) {
+            fetchData();
+          }
+        } catch(err){}
+      };
+    }
+
+    function setupOutsideClickListeners() {
+      document.addEventListener('click', (e) => {
+        const wrapper = document.getElementById('dropdown-excel-date-wrapper');
+        const menu = document.getElementById('menu-excel-date-tree');
+        if (wrapper && !wrapper.contains(e.target)) {
+          menu.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleExcelDateDropdown() {
+      const menu = document.getElementById('menu-excel-date-tree');
+      menu.classList.toggle('hidden');
+    }
+
+    async function fetchData() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch('/api/data');
+        const fullData = await res.json();
+
+        // Bulletproof Store Permissions Resolution
+        const userRole = (currentUser && currentUser.role ? String(currentUser.role).toUpperCase().trim() : '');
+        let userStores = [];
+        if (currentUser && Array.isArray(currentUser.stores)) {
+          currentUser.stores.forEach(st => {
+            String(st).split(',').forEach(sub => {
+              const cleaned = sub.trim();
+              if (cleaned) userStores.push(cleaned);
+            });
+          });
+        }
+
+        const isAllStores = !currentUser || 
+                            userRole === 'ADMIN' || 
+                            userStores.length === 0 || 
+                            userStores.includes('ALL');
+
+        const authorizedStoreNums = new Set(userStores.map(s => String(s).trim()));
+
+        const allowedEmployees = isAllStores 
+          ? (fullData.employees || []) 
+          : (fullData.employees || []).filter(e => authorizedStoreNums.has(String(e.loja_num).trim()));
+
+        const allowedStores = isAllStores 
+          ? (fullData.stores || []) 
+          : (fullData.stores || []).filter(s => authorizedStoreNums.has(String(s.loja_num).trim()));
+
+        rawData = {
+          ...fullData,
+          stores: allowedStores,
+          employees: allowedEmployees,
+          all_system_stores: fullData.stores || [],
+          stores_count: allowedStores.length
+        };
+
+        const todayStr = rawData.today_date || new Date().toLocaleDateString('pt-BR');
+        const elStoresBadge = document.getElementById('stores-count-badge');
+        if (elStoresBadge) elStoresBadge.innerText = rawData.stores_count || 0;
+        const elStoresTab = document.getElementById('stores-count-tab');
+        if (elStoresTab) elStoresTab.innerText = rawData.stores_count || 0;
+        const elKpiToday = document.getElementById('kpi-today-badge');
+        if (elKpiToday) elKpiToday.innerText = todayStr;
+        const elTodayDate = document.getElementById('today-date-badge');
+        if (elTodayDate) elTodayDate.innerText = todayStr;
+
+        buildExcelDateTree();
+        populateFilterDropdowns();
+
+        // Explicitly clear all filter elements to force clean initial state
+        const elSearch = document.getElementById('filter-search');
+        const elStore = document.getElementById('filter-store');
+        const elStatus = document.getElementById('filter-status');
+        const elCargo = document.getElementById('filter-cargo');
+        const elParent = document.getElementById('filter-parent');
+
+        if (elSearch) elSearch.value = '';
+        if (elStore) {
+          elStore.selectedIndex = 0;
+          elStore.value = '';
+        }
+        if (elStatus) elStatus.value = 'ATIVO';
+        if (elCargo) {
+          elCargo.selectedIndex = 0;
+          elCargo.value = '';
+        }
+        if (elParent) {
+          elParent.selectedIndex = 0;
+          elParent.value = '';
+        }
+
+        allTreeDates.forEach(k => selectedTreeDates.add(k));
+        const allChk = document.getElementById('chk-date-tree-all');
+        if (allChk) allChk.checked = true;
+
+        updateExcelDateLabel();
+        renderExcelDateTreeNodes();
+        applyFilters();
+        renderStoresTab();
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    function buildExcelDateTree() {
+      dateTreeStructure = {};
+      selectedTreeDates.clear();
+      allTreeDates.clear();
+
+      (rawData.employees || []).forEach(e => {
+        let y = e.adm_ano;
+        let m = e.adm_mes;
+        let d = e.adm_dia;
+
+        if ((!y || !m || !d) && e.dt_admissao) {
+          const cleanDt = String(e.dt_admissao).replace(/[\.\-]/g, '/').trim();
+          let p = cleanDt.split('/');
+          if (p.length === 2 && p[1].length === 6) {
+            p = [p[0], p[1].substring(0, 2), p[1].substring(2)];
+          }
+          if (p.length === 3) {
+            d = p[0].padStart(2, '0');
+            m = p[1].padStart(2, '0');
+            y = p[2];
+            e.adm_dia = d;
+            e.adm_mes = m;
+            e.adm_ano = y;
+          }
+        }
+
+        if (y && m && d && String(y).length === 4) {
+          const fullKey = `${y}-${m}-${d}`;
+          allTreeDates.add(fullKey);
+          selectedTreeDates.add(fullKey);
+
+          if (!dateTreeStructure[y]) dateTreeStructure[y] = {};
+          if (!dateTreeStructure[y][m]) dateTreeStructure[y][m] = new Set();
+          dateTreeStructure[y][m].add(d);
+        }
+      });
+
+      renderExcelDateTreeNodes();
+      updateExcelDateLabel();
+    }
+
+    function renderExcelDateTreeNodes(searchQuery = '') {
+      const container = document.getElementById('excel-date-tree-nodes');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const search = searchQuery.toLowerCase().trim();
+      const sortedYears = Object.keys(dateTreeStructure).sort((a,b) => b.localeCompare(a));
+
+      if (sortedYears.length === 0) {
+        container.innerHTML = '<div class="p-3 text-slate-400 dark:text-slate-500 text-center italic text-xs">Nenhuma data de admissão disponível</div>';
+        return;
+      }
+
+      sortedYears.forEach(year => {
+        const monthsObj = dateTreeStructure[year];
+        const sortedMonths = Object.keys(monthsObj).sort();
+
+        let yearMatches = !search || year.includes(search);
+        let monthMatchesAny = false;
+        
+        sortedMonths.forEach(m => {
+          const mName = monthFullNames[m] || m;
+          if (!search || mName.includes(search) || m.includes(search)) monthMatchesAny = true;
+          Array.from(monthsObj[m]).forEach(day => {
+            if (!search || day.includes(search)) monthMatchesAny = true;
+          });
+        });
+
+        if (!yearMatches && !monthMatchesAny) return;
+
+        const yearWrapper = document.createElement('div');
+        yearWrapper.className = "space-y-0.5";
+
+        const allYearKeys = [];
+        sortedMonths.forEach(m => {
+          Array.from(monthsObj[m]).forEach(d => allYearKeys.push(`${year}-${m}-${d}`));
+        });
+        const isYearChecked = allYearKeys.every(k => selectedTreeDates.has(k));
+
+        const yearHead = document.createElement('div');
+        yearHead.className = "flex items-center gap-1.5 px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-endoDark-850 rounded cursor-pointer font-bold text-slate-800 dark:text-slate-200";
+        yearHead.innerHTML = `
+          <span onclick="toggleTreeNodeExpand('year-${year}')" class="text-slate-400 hover:text-endoLime-400 px-0.5 font-mono text-[10px]" id="arrow-year-${year}">v</span>
+          <input type="checkbox" onchange="onToggleYearCheck('${year}', this.checked)" ${isYearChecked ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 text-endoLime-400 focus:ring-0">
+          <span>${year}</span>
+        `;
+        yearWrapper.appendChild(yearHead);
+
+        const monthsContainer = document.createElement('div');
+        monthsContainer.id = `tree-children-year-${year}`;
+        monthsContainer.className = "pl-5 space-y-0.5";
+
+        sortedMonths.forEach(m => {
+          const mName = monthFullNames[m] || m;
+          const daysList = Array.from(monthsObj[m]).sort();
+          const allMonthKeys = daysList.map(d => `${year}-${m}-${d}`);
+          const isMonthChecked = allMonthKeys.every(k => selectedTreeDates.has(k));
+
+          const monthWrapper = document.createElement('div');
+          monthWrapper.className = "space-y-0.5";
+
+          const monthHead = document.createElement('div');
+          monthHead.className = "flex items-center gap-1.5 px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-endoDark-850 rounded cursor-pointer text-slate-700 dark:text-slate-300";
+          monthHead.innerHTML = `
+            <span onclick="toggleTreeNodeExpand('month-${year}-${m}')" class="text-slate-400 hover:text-endoLime-400 px-0.5 font-mono text-[10px]" id="arrow-month-${year}-${m}">></span>
+            <input type="checkbox" onchange="onToggleMonthCheck('${year}', '${m}', this.checked)" ${isMonthChecked ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 text-endoLime-400 focus:ring-0">
+            <span class="capitalize">${mName}</span>
+          `;
+          monthWrapper.appendChild(monthHead);
+
+          const daysContainer = document.createElement('div');
+          daysContainer.id = `tree-children-month-${year}-${m}`;
+          daysContainer.className = "pl-5 hidden space-y-0.5";
+
+          daysList.forEach(d => {
+            const key = `${year}-${m}-${d}`;
+            const isDayChecked = selectedTreeDates.has(key);
+            const dayRow = document.createElement('label');
+            dayRow.className = "flex items-center gap-1.5 px-1 py-0.5 hover:bg-slate-100 dark:hover:bg-endoDark-850 rounded cursor-pointer text-slate-600 dark:text-slate-400 text-[11px]";
+            dayRow.innerHTML = `
+              <input type="checkbox" onchange="onToggleDayCheck('${key}', this.checked)" ${isDayChecked ? 'checked' : ''} class="rounded border-slate-300 dark:border-slate-700 text-endoLime-400 focus:ring-0">
+              <span>${d}</span>
+            `;
+            daysContainer.appendChild(dayRow);
+          });
+
+          monthWrapper.appendChild(daysContainer);
+          monthsContainer.appendChild(monthWrapper);
+        });
+
+        yearWrapper.appendChild(monthsContainer);
+        container.appendChild(yearWrapper);
+      });
+
+      updateExcelDateLabel();
+    }
+
+    function toggleTreeNodeExpand(id) {
+      const container = document.getElementById(`tree-children-${id}`);
+      const arrow = document.getElementById(`arrow-${id}`);
+      if (container) {
+        container.classList.toggle('hidden');
+        if (arrow) arrow.innerText = container.classList.contains('hidden') ? '>' : 'v';
+      }
+    }
+
+    function onToggleYearCheck(year, isChecked) {
+      const monthsObj = dateTreeStructure[year] || {};
+      Object.keys(monthsObj).forEach(m => {
+        Array.from(monthsObj[m]).forEach(d => {
+          const key = `${year}-${m}-${d}`;
+          if (isChecked) selectedTreeDates.add(key);
+          else selectedTreeDates.delete(key);
+        });
+      });
+      syncTreeAllCheckbox();
+      renderExcelDateTreeNodes(document.getElementById('search-excel-date-tree').value);
+      applyFilters();
+    }
+
+    function onToggleMonthCheck(year, m, isChecked) {
+      const daysList = Array.from(dateTreeStructure[year][m]);
+      daysList.forEach(d => {
+        const key = `${year}-${m}-${d}`;
+        if (isChecked) selectedTreeDates.add(key);
+        else selectedTreeDates.delete(key);
+      });
+      syncTreeAllCheckbox();
+      renderExcelDateTreeNodes(document.getElementById('search-excel-date-tree').value);
+      applyFilters();
+    }
+
+    function onToggleDayCheck(key, isChecked) {
+      if (isChecked) selectedTreeDates.add(key);
+      else selectedTreeDates.delete(key);
+      syncTreeAllCheckbox();
+      updateExcelDateLabel();
+      applyFilters();
+    }
+
+    function toggleSelectAllDateTree() {
+      const allChk = document.getElementById('chk-date-tree-all');
+      if (allChk.checked) {
+        allTreeDates.forEach(k => selectedTreeDates.add(k));
+      } else {
+        selectedTreeDates.clear();
+      }
+      renderExcelDateTreeNodes(document.getElementById('search-excel-date-tree').value);
+      applyFilters();
+    }
+
+    function syncTreeAllCheckbox() {
+      const allChk = document.getElementById('chk-date-tree-all');
+      allChk.checked = (allTreeDates.size > 0 && selectedTreeDates.size === allTreeDates.size);
+    }
+
+    function onSearchDateTree(val) {
+      renderExcelDateTreeNodes(val);
+    }
+
+    function updateExcelDateLabel() {
+      const labelEl = document.getElementById('label-excel-date');
+      if (!labelEl) return;
+      const allChk = document.getElementById('chk-date-tree-all');
+      const isAllChecked = (allChk && allChk.checked) || selectedTreeDates.size === 0 || selectedTreeDates.size >= allTreeDates.size;
+
+      if (isAllChecked) {
+        labelEl.innerText = "Todas as datas";
+        labelEl.className = "truncate font-bold text-lime-600 dark:text-endoLime-400";
+      } else {
+        labelEl.innerText = `${selectedTreeDates.size} data(s) selec.`;
+        labelEl.className = "truncate font-bold text-lime-600 dark:text-endoLime-400";
+      }
+    }
+
+    function populateFilterDropdowns() {
+      const storeSelect = document.getElementById('filter-store');
+      const cargoSelect = document.getElementById('filter-cargo');
+      
+      const currentStoreVal = storeSelect ? storeSelect.value : '';
+      const currentCargoVal = cargoSelect ? cargoSelect.value : '';
+
+      if (storeSelect) {
+        let storesToUse = (rawData.stores && rawData.stores.length > 0) 
+          ? rawData.stores 
+          : (rawData.all_system_stores || []);
+
+        if (storesToUse && storesToUse.length > 0) {
+          storeSelect.innerHTML = '<option value="">Todas as Lojas</option>';
+          storesToUse.forEach(s => {
+            if (!s || !s.loja_num) return;
+            const opt = document.createElement('option');
+            const num = String(s.loja_num).trim();
+            const name = String(s.nome_loja || `Loja ${num}`).trim();
+            opt.value = num;
+            opt.innerText = name.startsWith('Loja') ? name : `Loja ${num} - ${name}`;
+            storeSelect.appendChild(opt);
+          });
+          if (currentStoreVal) storeSelect.value = currentStoreVal;
+        }
+      }
+
+      if (cargoSelect) {
+        const cargosList = (rawData.cargos && rawData.cargos.length > 0)
+          ? rawData.cargos
+          : Array.from(new Set((rawData.employees || []).map(e => e.cargo).filter(Boolean))).sort();
+
+        if (cargosList.length > 0) {
+          cargoSelect.innerHTML = '<option value="">Todos os Cargos</option>';
+          cargosList.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.innerText = c;
+            cargoSelect.appendChild(opt);
+          });
+          if (currentCargoVal) cargoSelect.value = currentCargoVal;
+        }
+      }
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('filter-search').value.toLowerCase().trim();
+      const store = document.getElementById('filter-store').value.trim();
+      const status = document.getElementById('filter-status').value;
+      const cargo = document.getElementById('filter-cargo').value;
+      const parent = document.getElementById('filter-parent').value;
+
+      const allChk = document.getElementById('chk-date-tree-all');
+      const isTreeAllSelected = (
+        (allChk && allChk.checked) ||
+        selectedTreeDates.size === 0 || 
+        allTreeDates.size === 0 || 
+        selectedTreeDates.size >= allTreeDates.size
+      );
+
+      filteredEmployees = (rawData.employees || []).filter(e => {
+        if (store && String(e.loja_num).trim() !== store) return false;
+        
+        if (status === 'ATIVO' && !e.status.includes('ATIVO')) return false;
+        if (status === 'DESLIGADO' && !e.status.includes('DESLIG')) return false;
+        
+        if (cargo && e.cargo !== cargo) return false;
+        if (parent && e.eh_mae_pai !== parent) return false;
+
+        if (!isTreeAllSelected) {
+          if (!e.adm_ano || !e.adm_mes || !e.adm_dia) return false;
+          const y = String(e.adm_ano).trim();
+          const m = String(e.adm_mes).padStart(2, '0');
+          const d = String(e.adm_dia).padStart(2, '0');
+          const empKey = `${y}-${m}-${d}`;
+          if (!selectedTreeDates.has(empKey)) return false;
+        }
+
+        if (search) {
+          const matchNome = e.nome && e.nome.toLowerCase().includes(search);
+          const matchCpf = e.cpf && e.cpf.includes(search);
+          const matchMat = e.matricula && e.matricula.includes(search);
+          if (!matchNome && !matchCpf && !matchMat) return false;
+        }
+
+        return true;
+      });
+
+      currentPage = 1;
+      updateKPIs();
+      renderCharts();
+      renderChildrenAgeTab();
+      renderEmployeesTable();
+      document.getElementById('filtered-count-badge').innerText = filteredEmployees.length;
+      document.getElementById('adm-filter-count').innerText = filteredEmployees.length;
+    }
+
+    function clearFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-store').value = '';
+      document.getElementById('filter-status').value = 'ATIVO';
+      document.getElementById('filter-cargo').value = '';
+      document.getElementById('filter-parent').value = '';
+
+      allTreeDates.forEach(k => selectedTreeDates.add(k));
+      const allChk = document.getElementById('chk-date-tree-all');
+      if (allChk) allChk.checked = true;
+      updateExcelDateLabel();
+      renderExcelDateTreeNodes();
+
+      applyFilters();
+    }
+
+    function updateKPIs() {
+      const total = filteredEmployees.length;
+      const active = filteredEmployees.filter(e => e.status.includes('ATIVO')).length;
+      const term = filteredEmployees.filter(e => e.status.includes('DESLIG')).length;
+      const parents = filteredEmployees.filter(e => e.eh_mae_pai === 'SIM').length;
+      const totalChildren = filteredEmployees.reduce((acc, e) => acc + (e.qtd_filhos || 0), 0);
+      const pcd = filteredEmployees.filter(e => e.pcd === 'SIM').length;
+
+      document.getElementById('kpi-total').innerText = total;
+      document.getElementById('kpi-active').innerText = active;
+      document.getElementById('kpi-active-pct').innerText = total ? `${Math.round((active/total)*100)}% da operação` : '0%';
+      document.getElementById('kpi-terminated').innerText = term;
+      document.getElementById('kpi-terminated-pct').innerText = total ? `${Math.round((term/total)*100)}% turnover` : '0%';
+      document.getElementById('kpi-parents').innerText = parents;
+      document.getElementById('kpi-parents-pct').innerText = total ? `${Math.round((parents/total)*100)}% com filhos` : '0%';
+      document.getElementById('kpi-children').innerText = totalChildren;
+      document.getElementById('kpi-pcd').innerText = pcd;
+      document.getElementById('kpi-pcd-pct').innerText = total ? `${Math.round((pcd/total)*100)}% PCD` : '0%';
+    }
+
+    function renderChildrenAgeTab() {
+      const exactAgeCounts = {};
+      let totalFilteredChildren = 0;
+
+      filteredEmployees.forEach(e => {
+        (e.filhos || []).forEach(f => {
+          if (f.idade !== null && f.idade !== undefined) {
+            const ageKey = f.idade > 18 ? 18 : f.idade;
+            exactAgeCounts[ageKey] = (exactAgeCounts[ageKey] || 0) + 1;
+            totalFilteredChildren++;
+          }
+        });
+      });
+
+      document.getElementById('children-total-count-badge').innerText = totalFilteredChildren;
+
+      const cardsGrid = document.getElementById('children-age-cards-grid');
+      cardsGrid.innerHTML = '';
+
+      for (let age = 0; age <= 18; age++) {
+        const count = exactAgeCounts[age] || 0;
+        const label = age === 18 ? '18+ anos' : `${age} ${age === 1 ? 'ano' : 'anos'}`;
+        const card = document.createElement('div');
+        card.className = "bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm hover:border-amber-500/50 transition border";
+        card.innerHTML = `
+          <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">${label}</span>
+          <span class="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">${count}</span>
+          <span class="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">${totalFilteredChildren ? Math.round((count/totalFilteredChildren)*100) : 0}%</span>
+        `;
+        cardsGrid.appendChild(card);
+      }
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#475569';
+      const gridColor = isDark ? '#262d3b' : '#e2e8f0';
+
+      const labels = [];
+      const dataValues = [];
+      for (let age = 0; age <= 18; age++) {
+        labels.push(age === 18 ? '18+ anos' : `${age} a`);
+        dataValues.push(exactAgeCounts[age] || 0);
+      }
+
+      if (chartExactChildrenAge) chartExactChildrenAge.destroy();
+      chartExactChildrenAge = new Chart(document.getElementById('chart-exact-children-age'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Crianças por Idade Exata Hoje',
+            data: dataValues,
+            backgroundColor: '#f59e0b',
+            borderRadius: 6,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+
+    function renderCharts() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#475569';
+      const gridColor = isDark ? '#262d3b' : '#e2e8f0';
+
+      const storeCounts = {};
+      filteredEmployees.forEach(e => {
+        const key = `${e.loja_num}`;
+        if (!storeCounts[key]) storeCounts[key] = { active: 0, term: 0 };
+        if (e.status.includes('ATIVO')) storeCounts[key].active++;
+        else storeCounts[key].term++;
+      });
+
+      const sortedStores = Object.keys(storeCounts).sort((a,b) => (storeCounts[b].active + storeCounts[b].term) - (storeCounts[a].active + storeCounts[a].term)).slice(0, 18);
+      const storeLabels = sortedStores.map(s => `Loja ${s}`);
+      const storeActiveData = sortedStores.map(s => storeCounts[s].active);
+      const storeTermData = sortedStores.map(s => storeCounts[s].term);
+
+      if (chartStores) chartStores.destroy();
+      chartStores = new Chart(document.getElementById('chart-stores'), {
+        type: 'bar',
+        data: {
+          labels: storeLabels,
+          datasets: [
+            { label: 'Ativos', data: storeActiveData, backgroundColor: '#c0f200', borderRadius: 6, borderWidth: 0 },
+            { label: 'Desligados', data: storeTermData, backgroundColor: '#f43f5e', borderRadius: 6, borderWidth: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: textColor, font: { weight: 'bold' } } } },
+          scales: {
+            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+
+      const ageBrackets = { '0-3 anos': 0, '4-6 anos': 0, '7-10 anos': 0, '11-14 anos': 0, '15+ anos': 0 };
+      filteredEmployees.forEach(e => {
+        (e.filhos || []).forEach(f => {
+          if (f.idade !== null && f.idade !== undefined) {
+            if (f.idade <= 3) ageBrackets['0-3 anos']++;
+            else if (f.idade <= 6) ageBrackets['4-6 anos']++;
+            else if (f.idade <= 10) ageBrackets['7-10 anos']++;
+            else if (f.idade <= 14) ageBrackets['11-14 anos']++;
+            else ageBrackets['15+ anos']++;
+          }
+        });
+      });
+
+      if (chartChildrenAge) chartChildrenAge.destroy();
+      chartChildrenAge = new Chart(document.getElementById('chart-children-age'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(ageBrackets),
+          datasets: [{
+            label: 'Qtd Filhos (Idade Exata Hoje)',
+            data: Object.values(ageBrackets),
+            backgroundColor: '#f59e0b',
+            borderRadius: 6,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+
+      const sexoCounts = { 'MASCULINO': 0, 'FEMININO': 0, 'OUTROS': 0 };
+      filteredEmployees.forEach(e => {
+        if (e.sexo.includes('MASC')) sexoCounts['MASCULINO']++;
+        else if (e.sexo.includes('FEM')) sexoCounts['FEMININO']++;
+        else sexoCounts['OUTROS']++;
+      });
+      if (chartSexo) chartSexo.destroy();
+      chartSexo = new Chart(document.getElementById('chart-sexo'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Masculino', 'Feminino', 'Outros'],
+          datasets: [{
+            data: [sexoCounts['MASCULINO'], sexoCounts['FEMININO'], sexoCounts['OUTROS']],
+            backgroundColor: ['#3b82f6', '#ec4899', '#64748b'],
+            borderWidth: 0,
+            hoverBorderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: textColor, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    function renderEmployeesTable() {
+      const tbody = document.getElementById('employees-tbody');
+      tbody.innerHTML = '';
+
+      const total = filteredEmployees.length;
+      const totalPages = Math.ceil(total / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, total);
+
+      document.getElementById('page-start-idx').innerText = total ? startIdx + 1 : 0;
+      document.getElementById('page-end-idx').innerText = endIdx;
+      document.getElementById('page-total-count').innerText = total;
+      document.getElementById('current-page-num').innerText = currentPage;
+      document.getElementById('total-pages-num').innerText = totalPages;
+
+      document.getElementById('btn-prev-page').disabled = currentPage <= 1;
+      document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
+
+      const pageItems = filteredEmployees.slice(startIdx, endIdx);
+
+      if (pageItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">Nenhum colaborador encontrado com os filtros selecionados.</td></tr>`;
+        return;
+      }
+
+      pageItems.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-endoDark-850 transition duration-150";
+
+        const statusBadge = e.status.includes('ATIVO') 
+          ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">ATIVO</span>`
+          : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30">DESLIGADO</span>`;
+
+        const initials = e.nome ? e.nome.split(' ').map(n=>n[0]).slice(0,2).join('') : '??';
+
+        tr.innerHTML = `
+          <td class="py-3.5 px-4 font-bold text-lime-700 dark:text-endoLime-400">Loja ${e.loja_num}</td>
+          <td class="py-3.5 px-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-endoDark-800 text-slate-800 dark:text-slate-200 font-black text-[11px] flex items-center justify-center border border-slate-300 dark:border-endoDark-700 shadow-sm">${initials}</div>
+              <div>
+                <div class="font-bold text-slate-900 dark:text-slate-100 text-xs">${e.nome}</div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400">${e.email || '-'}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3.5 px-4 font-mono text-slate-700 dark:text-slate-300 font-medium">
+            ${e.cpf || '-'}
+          </td>
+          <td class="py-3.5 px-4">${statusBadge}</td>
+          <td class="py-3.5 px-4">
+            <div class="text-slate-800 dark:text-slate-200 font-semibold">${e.cargo || '-'}</div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400">${e.area || '-'}</div>
+          </td>
+          <td class="py-3.5 px-4 text-lime-700 dark:text-endoLime-400 font-bold">${e.dt_admissao || '-'}</td>
+          <td class="py-3.5 px-4 text-center">
+            ${e.qtd_filhos > 0 
+              ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30">${e.qtd_filhos} filho(s)</span>`
+              : `<span class="text-slate-400 dark:text-slate-500 text-[10px]">-</span>`}
+          </td>
+          <td class="py-3.5 px-4 text-right">
+            <button onclick="openModal('${e.id}')" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 text-[11px] font-bold border border-slate-300 dark:border-endoDark-700 transition">
+              Ver Mais
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderEmployeesTable();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(filteredEmployees.length / pageSize) || 1;
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderEmployeesTable();
+      }
+    }
+
+    function renderStoresTab() {
+      const container = document.getElementById('tab-stores');
+      container.innerHTML = '';
+
+      (rawData.stores || []).forEach(s => {
+        const card = document.createElement('div');
+        card.className = "bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl p-5 border shadow-sm dark:shadow-xl flex flex-col justify-between hover:border-endoLime-400/50 transition group cursor-pointer relative overflow-hidden";
+        card.onclick = () => {
+          document.getElementById('filter-store').value = s.loja_num;
+          applyFilters();
+          switchTab('employees');
+        };
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-endoLime-400/20 dark:bg-endoDark-800 text-lime-700 dark:text-endoLime-400 flex items-center justify-center font-black text-xs border border-slate-300 dark:border-endoDark-700 transition px-1 text-center">
+              ${s.loja_num}
+            </div>
+            <span class="text-[10px] text-lime-700 dark:text-endoLime-400 font-black px-2 py-0.5 bg-lime-100 dark:bg-endoLime-400/10 rounded-full border border-lime-300 dark:border-endoLime-400/30">🟢 Conectado</span>
+          </div>
+
+          <div>
+            <h4 class="font-black text-slate-900 dark:text-white text-sm">Loja ${s.loja_num} - ${s.nome_loja}</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">${s.filename}</p>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-between text-xs font-semibold">
+            <span class="text-slate-500 dark:text-slate-400">Total: <b class="text-slate-900 dark:text-slate-200">${s.total_colaboradores}</b></span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-bold">Ativos: ${s.ativos}</span>
+            <span class="text-rose-600 dark:text-rose-400 font-bold">Desligados: ${s.desligados}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function switchTab(tab) {
+      ['analytics', 'children-ages', 'employees', 'stores'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.classList.remove('bg-endoLime-400', 'text-black', 'shadow-md', 'shadow-endoLime-400/20');
+        btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200', 'dark:bg-endoDark-850', 'dark:text-slate-400');
+        
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.classList.remove('text-black');
+          if (t === 'children-ages') icon.classList.add('text-amber-500', 'dark:text-amber-400');
+        }
+      });
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      activeBtn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200', 'dark:bg-endoDark-850', 'dark:text-slate-400');
+      activeBtn.classList.add('bg-endoLime-400', 'text-black', 'shadow-md', 'shadow-endoLime-400/20');
+      
+      const activeIcon = activeBtn.querySelector('i');
+      if (activeIcon) {
+        activeIcon.classList.remove('text-amber-500', 'dark:text-amber-400');
+        activeIcon.classList.add('text-black');
+      }
+    }
+
+    /* CADASTRO DE COLABORADOR MODAL LOGIC */
+    function openAddEmployeeModal() {
+      const lojaSelect = document.getElementById('add-emp-loja');
+      lojaSelect.innerHTML = '';
+
+      (rawData.stores || []).forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.loja_num;
+        opt.innerText = `Loja ${s.loja_num} - ${s.nome_loja}`;
+        lojaSelect.appendChild(opt);
+      });
+
+      document.getElementById('add-emp-filhos-list').innerHTML = '';
+      document.getElementById('add-employee-modal').classList.remove('hidden');
+    }
+
+    function closeAddEmployeeModal() {
+      document.getElementById('add-employee-modal').classList.add('hidden');
+    }
+
+    function addFilhoFormRow() {
+      const container = document.getElementById('add-emp-filhos-list');
+      const idx = container.children.length + 1;
+      const row = document.createElement('div');
+      row.className = "grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-2.5 rounded-xl border text-xs relative group";
+      row.innerHTML = `
+        <div>
+          <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Nome do Filho ${idx}</label>
+          <input type="text" class="filho-nome w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400" placeholder="Nome da criança">
+        </div>
+        <div>
+          <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Sexo Biológico</label>
+          <select class="filho-sexo w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400">
+            <option value="MASCULINO">MASCULINO</option>
+            <option value="FEMININO">FEMININO</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Data Nascimento</label>
+            <input type="text" class="filho-nasc w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-endoLime-400" placeholder="DD/MM/AAAA">
+          </div>
+          <button type="button" onclick="this.closest('.grid').remove()" class="mt-4 p-1.5 text-slate-400 hover:text-rose-500 transition" title="Remover filho">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+      container.appendChild(row);
+      lucide.createIcons();
+    }
+
+    async function handleEmployeeFormSubmit(e) {
+      e.preventDefault();
+      const loja_num = document.getElementById('add-emp-loja').value;
+      const storeObj = (rawData.stores || []).find(s => s.loja_num === loja_num);
+      const nome_loja = storeObj ? storeObj.nome_loja : `Loja ${loja_num}`;
+
+      const filhos = [];
+      const rows = document.querySelectorAll('#add-emp-filhos-list > div');
+      rows.forEach(r => {
+        const fn = r.querySelector('.filho-nome').value.trim();
+        const fs = r.querySelector('.filho-sexo').value;
+        const fd = r.querySelector('.filho-nasc').value.trim();
+        if (fn || fd) {
+          filhos.push({ nome: fn, sexo: fs, data_nascimento: fd });
+        }
+      });
+
+      const payload = {
+        loja_num,
+        nome_loja,
+        matricula: document.getElementById('add-emp-matricula').value.trim(),
+        nome: document.getElementById('add-emp-nome').value.trim(),
+        status: document.getElementById('add-emp-status').value,
+        cpf: document.getElementById('add-emp-cpf').value.trim(),
+        cargo: document.getElementById('add-emp-cargo').value.trim(),
+        area: document.getElementById('add-emp-area').value.trim(),
+        lider_direto: document.getElementById('add-emp-lider').value.trim(),
+        dt_admissao: document.getElementById('add-emp-dt-adm').value.trim(),
+        dt_nascimento: document.getElementById('add-emp-dt-nasc').value.trim(),
+        email: document.getElementById('add-emp-email').value.trim(),
+        sexo: document.getElementById('add-emp-sexo').value,
+        pcd: document.getElementById('add-emp-pcd').value,
+        raca_etnia: document.getElementById('add-emp-raca').value,
+        filhos: filhos
+      };
+
+      try {
+        const res = await fetch('/api/employees/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeAddEmployeeModal();
+          fetchData();
+        } else {
+          alert("Erro ao cadastrar colaborador: " + (data.message || 'Erro no servidor'));
+        }
+      } catch (err) {
+        alert("Erro ao conectar ao servidor.");
+      }
+    }
+
+    /* GERENCIAR USUÁRIOS MODAL LOGIC */
+    async function openManageUsersModal() {
+      await loadUsersList();
+      populateUserStoresChecklist();
+      document.getElementById('manage-users-modal').classList.remove('hidden');
+    }
+
+    function closeManageUsersModal() {
+      document.getElementById('manage-users-modal').classList.add('hidden');
+    }
+
+    async function loadUsersList() {
+      try {
+        const res = await fetch('/api/users');
+        systemUsersList = await res.json();
+        renderUsersTable();
+      } catch(err) {
+        console.error("Error loading users:", err);
+      }
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById('users-tbody');
+      tbody.innerHTML = '';
+
+      systemUsersList.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-endoDark-900 transition";
+
+        const isAll = u.role === 'ADMIN' || u.stores.includes('ALL');
+        const storesBadge = isAll 
+          ? `<span class="px-2 py-0.5 rounded-md bg-lime-100 text-lime-800 dark:bg-endoLime-400/20 dark:text-endoLime-400 font-black text-[10px]">Todas as Lojas (Admin)</span>`
+          : `<span class="px-2 py-0.5 rounded-md bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400 font-bold text-[10px]">Lojas: ${u.stores.join(', ')}</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${u.nome}</td>
+          <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-mono">${u.email}</td>
+          <td class="py-3 px-4 font-bold ${u.role === 'ADMIN' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}">${u.role === 'ADMIN' ? '👑 Admin' : '👤 Usuário Comum'}</td>
+          <td class="py-3 px-4">${storesBadge}</td>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button onclick="editUserRow('${u.id}')" class="px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-800 dark:hover:bg-endoDark-700 dark:text-slate-200 text-[11px] font-bold">Editar</button>
+            <button onclick="deleteUserRow('${u.id}')" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 hover:bg-rose-200 text-[11px] font-bold">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    let editingUserOriginalData = null;
+
+    function onUserFormInputChange() {
+      const nome = document.getElementById('user-input-nome').value.trim();
+      const email = document.getElementById('user-input-email').value.trim();
+      const senha = document.getElementById('user-input-senha').value.trim();
+      const role = document.getElementById('user-input-role').value;
+      const checkedStores = Array.from(document.querySelectorAll('.chk-user-store-item:checked')).map(c => c.value);
+
+      const editId = document.getElementById('edit-user-id').value;
+      let hasChanges = false;
+
+      if (editId && editingUserOriginalData) {
+        const orig = editingUserOriginalData;
+        const origStores = (orig.stores || []).sort().join(',');
+        const curStores = checkedStores.sort().join(',');
+
+        if (
+          nome !== (orig.nome || '') ||
+          email !== (orig.email || '') ||
+          senha !== '' ||
+          role !== (orig.role || 'USER') ||
+          (role === 'USER' && curStores !== origStores)
+        ) {
+          hasChanges = true;
+        }
+      } else {
+        if (nome.length > 0 || email.length > 0 || senha.length > 0 || checkedStores.length > 0) {
+          hasChanges = true;
+        }
+      }
+
+      const btn = document.getElementById('btn-save-user');
+      if (btn) {
+        if (hasChanges) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-40', 'pointer-events-none', 'cursor-not-allowed');
+          btn.classList.add('opacity-100', 'brand-lime-glow', 'cursor-pointer', 'hover:bg-endoLime-300');
+        } else {
+          btn.disabled = true;
+          btn.classList.add('opacity-40', 'pointer-events-none', 'cursor-not-allowed');
+          btn.classList.remove('opacity-100', 'brand-lime-glow', 'cursor-pointer', 'hover:bg-endoLime-300');
+        }
+      }
+    }
+
+    function populateUserStoresChecklist(selectedStores = []) {
+      const container = document.getElementById('user-stores-checklist');
+      container.innerHTML = '';
+
+      const allStores = (rawData.all_system_stores || rawData.stores || []).map(s => ({
+        num: String(s.loja_num).trim(),
+        name: s.nome_loja || `Loja ${s.loja_num}`
+      }));
+
+      allStores.sort((a,b) => {
+        const nA = parseInt(a.num, 10) || 0;
+        const nB = parseInt(b.num, 10) || 0;
+        return nA - nB;
+      });
+
+      allStores.forEach(s => {
+        const isChecked = selectedStores.includes(s.num) || selectedStores.includes('ALL');
+        const item = document.createElement('label');
+        item.className = "flex items-center gap-2 text-[11px] text-slate-800 dark:text-slate-200 hover:text-lime-600 dark:hover:text-endoLime-400 cursor-pointer truncate bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-2 rounded-xl border transition";
+        item.innerHTML = `
+          <input type="checkbox" value="${s.num}" onchange="onUserFormInputChange()" ${isChecked ? 'checked' : ''} class="chk-user-store-item rounded border-slate-300 dark:border-slate-700 text-endoLime-400 focus:ring-0">
+          <span class="truncate font-bold">Loja ${s.num} - ${s.name}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function toggleUserStoresSelection(roleVal) {
+      const wrapper = document.getElementById('wrapper-user-stores-section');
+      if (roleVal === 'ADMIN') {
+        wrapper.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        wrapper.classList.remove('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    function resetUserForm() {
+      editingUserOriginalData = null;
+      document.getElementById('edit-user-id').value = '';
+      document.getElementById('user-input-nome').value = '';
+      document.getElementById('user-input-email').value = '';
+      document.getElementById('user-input-senha').value = '';
+      document.getElementById('user-input-role').value = 'USER';
+      document.getElementById('user-form-title').innerText = 'Cadastrar Novo Usuário';
+      populateUserStoresChecklist([]);
+      toggleUserStoresSelection('USER');
+      onUserFormInputChange();
+    }
+
+    function editUserRow(userId) {
+      const u = systemUsersList.find(x => x.id === userId);
+      if (!u) return;
+
+      editingUserOriginalData = { ...u };
+      document.getElementById('edit-user-id').value = u.id;
+      document.getElementById('user-input-nome').value = u.nome;
+      document.getElementById('user-input-email').value = u.email;
+      document.getElementById('user-input-senha').value = '';
+      document.getElementById('user-input-role').value = u.role;
+      document.getElementById('user-form-title').innerText = `Editar Usuário: ${u.nome}`;
+      populateUserStoresChecklist(u.stores);
+      toggleUserStoresSelection(u.role);
+      onUserFormInputChange();
+    }
+
+    async function handleUserFormSubmit(e) {
+      e.preventDefault();
+      const u_id = document.getElementById('edit-user-id').value;
+      const nome = document.getElementById('user-input-nome').value.trim();
+      const email = document.getElementById('user-input-email').value.trim();
+      const senha = document.getElementById('user-input-senha').value.trim();
+      const role = document.getElementById('user-input-role').value;
+
+      let stores = [];
+      if (role === 'ADMIN') {
+        stores = ['ALL'];
+      } else {
+        const checkedItems = document.querySelectorAll('.chk-user-store-item:checked');
+        stores = Array.from(checkedItems).map(c => c.value);
+
+        if (stores.length === 0) {
+          alert("Selecione ao menos 1 loja na lista para o usuário comum gerenciar.");
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch('/api/users/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: u_id, nome, email, senha, role, stores })
+        });
+        const data = await res.json();
+        if (data.success) {
+          resetUserForm();
+          await loadUsersList();
+        } else {
+          alert("Erro ao salvar usuário: " + data.message);
+        }
+      } catch (err) {
+        alert("Erro ao conectar ao servidor.");
+      }
+    }
+
+    async function deleteUserRow(userId) {
+      if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+      try {
+        const res = await fetch('/api/users/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await loadUsersList();
+        }
+      } catch (err) {
+        alert("Erro ao excluir usuário.");
+      }
+    }
+
+    function openModal(empId) {
+      const emp = (rawData.employees || []).find(e => e.id === empId);
+      if (!emp) return;
+
+      const initials = emp.nome ? emp.nome.split(' ').map(n=>n[0]).slice(0,2).join('') : '??';
+      document.getElementById('modal-avatar').innerText = initials;
+      document.getElementById('modal-emp-nome').innerText = emp.nome;
+      document.getElementById('modal-emp-loja').innerText = `Loja ${emp.loja_num} - ${emp.nome_loja}`;
+      document.getElementById('modal-emp-cargo').innerText = emp.cargo || 'Cargo não especificado';
+      document.getElementById('modal-emp-status').innerText = emp.status;
+      document.getElementById('modal-emp-cpf').innerText = emp.cpf || '-';
+      document.getElementById('modal-emp-matricula').innerText = emp.matricula || '-';
+      document.getElementById('modal-emp-lider').innerText = emp.lider_direto || '-';
+      document.getElementById('modal-emp-admissao').innerText = emp.dt_admissao || '-';
+      document.getElementById('modal-emp-nascimento').innerText = emp.dt_nascimento ? `${emp.dt_nascimento} (${emp.idade || '?'} anos hoje)` : '-';
+      document.getElementById('modal-emp-raca').innerText = emp.raca_etnia || '-';
+      document.getElementById('modal-emp-pcd').innerText = emp.pcd || 'NÃO';
+      document.getElementById('modal-emp-instrucao').innerText = emp.instrucao || '-';
+
+      document.getElementById('modal-emp-children-count').innerText = `${emp.qtd_filhos} Filho(s)`;
+
+      const childrenContainer = document.getElementById('modal-children-list');
+      childrenContainer.innerHTML = '';
+
+      if (emp.filhos && emp.filhos.length > 0) {
+        emp.filhos.forEach(f => {
+          const card = document.createElement('div');
+          card.className = "bg-slate-50 border-slate-200 dark:bg-endoDark-950 dark:border-endoDark-800 p-3.5 rounded-2xl border flex items-center justify-between text-xs";
+          card.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-900 dark:text-slate-200">${f.nome}</div>
+              <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">${f.sexo || 'Sexo não informado'}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-amber-600 dark:text-amber-400 font-bold text-[11px]">${f.idade !== null ? f.idade + ' anos (hoje)' : '-'}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${f.data_nascimento || ''}</div>
+            </div>
+          `;
+          childrenContainer.appendChild(card);
+        });
+      } else {
+        childrenContainer.innerHTML = `<div class="col-span-2 py-4 text-center text-slate-400 dark:text-slate-500 text-xs font-medium">Nenhum filho cadastrado para este colaborador.</div>`;
+      }
+
+      document.getElementById('employee-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('employee-modal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

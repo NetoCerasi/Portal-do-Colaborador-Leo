@@ -1,0 +1,24 @@
+[
+  {
+    "id": "usr_admin",
+    "nome": "Neto Cerasi (Admin)",
+    "email": "admin@leomadeiras.com.br",
+    "senha": "admin",
+    "role": "ADMIN",
+    "stores": [
+      "ALL"
+    ]
+  },
+  {
+    "id": "usr_1787256001",
+    "nome": "Teste",
+    "email": "teste@teste.com",
+    "senha": "1234",
+    "role": "USER",
+    "stores": [
+      "2050",
+      "2051",
+      "2052"
+    ]
+  }
+]
