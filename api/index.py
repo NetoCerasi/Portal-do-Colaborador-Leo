@@ -341,6 +341,14 @@ class handler(BaseHTTPRequestHandler):
             query_d1(sql, params)
             return self._send_json({'success': True, 'employee': emp})
 
+        elif path in ['/api/employees/delete', '/api/employees/delete.py']:
+            emp_id = str(payload.get('id', '')).strip()
+            if not emp_id:
+                return self._send_json({'success': False, 'message': 'ID do colaborador não informado.'}, status=400)
+            
+            query_d1('DELETE FROM employees WHERE id = ?;', [emp_id])
+            return self._send_json({'success': True, 'deleted_id': emp_id})
+
         elif path in ['/api/stores/save', '/api/stores/save.py', '/api/stores', '/api/stores.py']:
             loja_num = str(payload.get('loja_num', '')).strip()
             nome_loja = str(payload.get('nome_loja', '')).strip()

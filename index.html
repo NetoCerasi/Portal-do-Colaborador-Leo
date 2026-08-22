@@ -907,6 +907,10 @@
             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             <span>Editar Dados</span>
           </button>
+          <button id="btn-modal-del-emp" onclick="triggerDeleteFromDetailsModal()" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-1.5 transition shadow-md">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Excluir</span>
+          </button>
           <button onclick="closeModal()" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-600 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -1009,6 +1013,44 @@
           <button type="button" onclick="closeDeleteStoreModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
           <button type="button" id="btn-confirm-del-store" onclick="executeDeleteStore()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-600/30 flex items-center gap-1.5">
             <i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir Loja
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO DE EXCLUSÃO DE COLABORADOR (COM ALERTA) -->
+  <div id="delete-employee-modal" class="fixed inset-0 bg-slate-900/70 dark:bg-endoDark-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-rose-200 dark:bg-endoDark-900 dark:border-rose-900/60 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden border">
+      <div class="px-6 py-5 border-b border-slate-200 dark:border-endoDark-800 bg-rose-50/50 dark:bg-rose-950/20 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center font-black shrink-0">
+          <i data-lucide="user-x" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-black text-rose-600 dark:text-rose-400">Excluir Colaborador</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Esta ação é definitiva e removerá todos os dados</p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          Você tem certeza que deseja excluir o cadastro de <span id="del-emp-name-display" class="font-black text-slate-900 dark:text-white">Colaborador</span>?
+        </p>
+
+        <div class="p-4 rounded-2xl bg-rose-100/70 border border-rose-300 dark:bg-rose-950/40 dark:border-rose-800/80 text-rose-900 dark:text-rose-300 text-xs space-y-1">
+          <div class="font-black flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>AVISO IMPORTANTE</span>
+          </div>
+          <p class="text-[11px] leading-relaxed">
+            O histórico deste colaborador e todos os dados de dependentes vinculados serão permanentemente excluídos da base.
+          </p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 dark:border-endoDark-800 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeDeleteEmployeeModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 font-bold text-xs">Cancelar</button>
+          <button type="button" id="btn-confirm-del-emp" onclick="executeDeleteEmployee()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-600/30 flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir
           </button>
         </div>
       </div>
@@ -2085,10 +2127,15 @@
             <button onclick="openEditEmployeeModal('${e.id}')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 dark:text-amber-400 text-[11px] font-bold border border-amber-300 dark:border-amber-500/40 transition" title="Editar dados cadastrais">
               Editar
             </button>
+            <button onclick="requestDeleteEmployee('${e.id}', '${e.nome.replace(/'/g, "\\'")}', '${e.loja_num}')" class="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-400 text-[11px] font-bold border border-rose-300 dark:border-rose-500/40 transition inline-flex items-center gap-1" title="Excluir colaborador definitivamente">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400"></i>
+              <span>Excluir</span>
+            </button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+      lucide.createIcons();
     }
 
     function prevPage() {
@@ -2492,6 +2539,61 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir Loja`;
+        lucide.createIcons();
+      }
+    }
+
+    /* EXCLUSÃO DE COLABORADOR */
+    let empToDelete = null;
+
+    function requestDeleteEmployee(id, nome, loja_num) {
+      empToDelete = { id, nome, loja_num };
+      document.getElementById('del-emp-name-display').innerText = `${nome} (Loja ${loja_num})`;
+      document.getElementById('delete-employee-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function triggerDeleteFromDetailsModal() {
+      if (!currentViewingEmpId) return;
+      const emp = (rawData.employees || []).find(e => e.id === currentViewingEmpId);
+      if (!emp) return;
+      const empId = emp.id;
+      const empNome = emp.nome;
+      const empLoja = emp.loja_num;
+      closeModal();
+      requestDeleteEmployee(empId, empNome, empLoja);
+    }
+
+    function closeDeleteEmployeeModal() {
+      empToDelete = null;
+      document.getElementById('delete-employee-modal').classList.add('hidden');
+    }
+
+    async function executeDeleteEmployee() {
+      if (!empToDelete) return;
+      const btn = document.getElementById('btn-confirm-del-emp');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Excluindo...`;
+
+      try {
+        const res = await fetch('/api/employees/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: empToDelete.id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeDeleteEmployeeModal();
+          await fetchData();
+          switchTab('employees');
+        } else {
+          alert("Erro ao excluir colaborador: " + (data.message || 'Erro no servidor'));
+        }
+      } catch (err) {
+        alert("Erro ao conectar ao servidor.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> Sim, Excluir`;
         lucide.createIcons();
       }
     }

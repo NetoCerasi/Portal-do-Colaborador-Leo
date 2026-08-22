@@ -334,6 +334,16 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true, employee: emp }), { headers: corsHeaders });
     }
 
+    if (path === '/api/employees/delete' || path.startsWith('/api/employees/delete')) {
+      const empId = String(payload.id || '').trim();
+      if (!empId) {
+        return new Response(JSON.stringify({ success: false, message: 'ID do colaborador não informado.' }), { status: 400, headers: corsHeaders });
+      }
+
+      await db.prepare('DELETE FROM employees WHERE id = ?;').bind(empId).run();
+      return new Response(JSON.stringify({ success: true, deleted_id: empId }), { headers: corsHeaders });
+    }
+
     if (path === '/api/stores/save' || path.startsWith('/api/stores/save')) {
       const lojaNum = String(payload.loja_num || '').trim();
       const nomeLoja = String(payload.nome_loja || '').trim();
