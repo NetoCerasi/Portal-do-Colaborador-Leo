@@ -454,17 +454,88 @@
     <!-- Tab 3: Employees List Table -->
     <section id="tab-employees" class="hidden space-y-4">
       <div class="bg-white border-slate-200 dark:bg-endoDark-900 dark:border-endoDark-800 rounded-2xl border shadow-sm dark:shadow-xl overflow-hidden transition-colors duration-200">
+        
+        <!-- Quick Filters Toolbar on Top of Table -->
+        <div class="p-4 bg-slate-50 border-b border-slate-200 dark:bg-endoDark-950/70 dark:border-endoDark-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div class="flex items-center gap-2 flex-1">
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+              <input type="text" id="table-filter-search" oninput="syncTableSearch(this.value)" placeholder="Filtrar por nome, CPF, matrícula ou cargo..." class="w-full bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl pl-9 pr-3.5 py-2.5 focus:outline-none focus:border-endoLime-400 shadow-inner">
+            </div>
+            <button onclick="clearAllFilters()" class="px-3 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition shrink-0" title="Limpar todos os filtros">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span class="hidden sm:inline">Limpar</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <!-- Table Status Filter -->
+            <select id="table-filter-status" onchange="syncTableSelect('filter-status', this.value)" class="bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-endoLime-400 font-medium">
+              <option value="ATIVO" selected>Apenas Ativos</option>
+              <option value="ALL">Todos os Status</option>
+              <option value="DESLIGADO">Apenas Desligados</option>
+            </select>
+
+            <!-- Table Store Filter -->
+            <select id="table-filter-store" onchange="syncTableSelect('filter-store', this.value)" class="bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-endoLime-400 font-medium max-w-[180px] truncate">
+              <option value="">Todas as Lojas</option>
+            </select>
+
+            <!-- Table Cargo Filter -->
+            <select id="table-filter-cargo" onchange="syncTableSelect('filter-cargo', this.value)" class="bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-endoLime-400 font-medium max-w-[180px] truncate">
+              <option value="">Todos os Cargos</option>
+            </select>
+
+            <!-- Table Parent Filter -->
+            <select id="table-filter-parent" onchange="syncTableSelect('filter-parent', this.value)" class="bg-white border-slate-300 text-slate-900 dark:bg-endoDark-900 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-endoLime-400 font-medium">
+              <option value="">Filhos: Todos</option>
+              <option value="SIM">Com Filhos</option>
+              <option value="NÃO">Sem Filhos</option>
+            </select>
+          </div>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-100 text-slate-600 dark:bg-endoDark-950 dark:text-slate-400 font-black border-b border-slate-200 dark:border-endoDark-800 uppercase tracking-wider">
               <tr>
-                <th class="py-3.5 px-4">Loja</th>
-                <th class="py-3.5 px-4">Colaborador</th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('loja_num')">
+                  <div class="flex items-center gap-1.5">
+                    <span>Loja</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('nome')">
+                  <div class="flex items-center gap-1.5">
+                    <span>Colaborador</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
                 <th class="py-3.5 px-4">CPF</th>
-                <th class="py-3.5 px-4">Status</th>
-                <th class="py-3.5 px-4">Cargo / Área</th>
-                <th class="py-3.5 px-4">Data Admissão</th>
-                <th class="py-3.5 px-4 text-center">Filhos</th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('status')">
+                  <div class="flex items-center gap-1.5">
+                    <span>Status</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('cargo')">
+                  <div class="flex items-center gap-1.5">
+                    <span>Cargo / Área</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
+                <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('dt_admissao')">
+                  <div class="flex items-center gap-1.5">
+                    <span>Data Admissão</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
+                <th class="py-3.5 px-4 text-center cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('qtd_filhos')">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <span>Filhos</span>
+                    <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
+                  </div>
+                </th>
                 <th class="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
@@ -1487,45 +1558,49 @@
 
     function populateFilterDropdowns() {
       const storeSelect = document.getElementById('filter-store');
+      const tableStoreSelect = document.getElementById('table-filter-store');
       const cargoSelect = document.getElementById('filter-cargo');
+      const tableCargoSelect = document.getElementById('table-filter-cargo');
       
       const currentStoreVal = storeSelect ? storeSelect.value : '';
       const currentCargoVal = cargoSelect ? cargoSelect.value : '';
 
-      if (storeSelect) {
-        let storesToUse = (rawData.stores && rawData.stores.length > 0) 
-          ? rawData.stores 
-          : (rawData.all_system_stores || []);
+      let storesToUse = (rawData.stores && rawData.stores.length > 0) 
+        ? rawData.stores 
+        : (rawData.all_system_stores || []);
 
-        if (storesToUse && storesToUse.length > 0) {
-          storeSelect.innerHTML = '<option value="">Todas as Lojas</option>';
-          storesToUse.forEach(s => {
-            if (!s || !s.loja_num) return;
-            const opt = document.createElement('option');
-            const num = String(s.loja_num).trim();
-            const name = String(s.nome_loja || `Loja ${num}`).trim();
-            opt.value = num;
-            opt.innerText = name.startsWith('Loja') ? name : `Loja ${num} - ${name}`;
-            storeSelect.appendChild(opt);
-          });
+      if (storesToUse && storesToUse.length > 0) {
+        const storeOptionsHtml = '<option value="">Todas as Lojas</option>' + storesToUse.map(s => {
+          if (!s || !s.loja_num) return '';
+          const num = String(s.loja_num).trim();
+          const name = String(s.nome_loja || `Loja ${num}`).trim();
+          const label = name.startsWith('Loja') ? name : `Loja ${num} - ${name}`;
+          return `<option value="${num}">${label}</option>`;
+        }).join('');
+
+        if (storeSelect) {
+          storeSelect.innerHTML = storeOptionsHtml;
           if (currentStoreVal) storeSelect.value = currentStoreVal;
+        }
+        if (tableStoreSelect) {
+          tableStoreSelect.innerHTML = storeOptionsHtml;
+          if (currentStoreVal) tableStoreSelect.value = currentStoreVal;
         }
       }
 
-      if (cargoSelect) {
-        const cargosList = (rawData.cargos && rawData.cargos.length > 0)
-          ? rawData.cargos
-          : Array.from(new Set((rawData.employees || []).map(e => e.cargo).filter(Boolean))).sort();
+      const cargosList = (rawData.cargos && rawData.cargos.length > 0)
+        ? rawData.cargos
+        : Array.from(new Set((rawData.employees || []).map(e => e.cargo).filter(Boolean))).sort();
 
-        if (cargosList.length > 0) {
-          cargoSelect.innerHTML = '<option value="">Todos os Cargos</option>';
-          cargosList.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
-            opt.innerText = c;
-            cargoSelect.appendChild(opt);
-          });
+      if (cargosList.length > 0) {
+        const cargoOptionsHtml = '<option value="">Todos os Cargos</option>' + cargosList.map(c => `<option value="${c}">${c}</option>`).join('');
+        if (cargoSelect) {
+          cargoSelect.innerHTML = cargoOptionsHtml;
           if (currentCargoVal) cargoSelect.value = currentCargoVal;
+        }
+        if (tableCargoSelect) {
+          tableCargoSelect.innerHTML = cargoOptionsHtml;
+          if (currentCargoVal) tableCargoSelect.value = currentCargoVal;
         }
       }
     }
@@ -1580,6 +1655,83 @@
       renderEmployeesTable();
       document.getElementById('filtered-count-badge').innerText = filteredEmployees.length;
       document.getElementById('adm-filter-count').innerText = filteredEmployees.length;
+    }
+
+    /* Sincronização dos Filtros no Topo da Tabela de Colaboradores */
+    function syncTableSearch(val) {
+      const mainSearch = document.getElementById('filter-search');
+      if (mainSearch) mainSearch.value = val;
+      applyFilters();
+    }
+
+    function syncTableSelect(targetId, val) {
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) targetEl.value = val;
+      applyFilters();
+    }
+
+    function clearAllFilters() {
+      const tableSearch = document.getElementById('table-filter-search');
+      if (tableSearch) tableSearch.value = '';
+      
+      const tStore = document.getElementById('table-filter-store');
+      if (tStore) tStore.value = '';
+      
+      const tStatus = document.getElementById('table-filter-status');
+      if (tStatus) tStatus.value = 'ATIVO';
+      
+      const tCargo = document.getElementById('table-filter-cargo');
+      if (tCargo) tCargo.value = '';
+      
+      const tParent = document.getElementById('table-filter-parent');
+      if (tParent) tParent.value = '';
+
+      clearFilters();
+    }
+
+    /* Ordenação de Colunas na Tabela */
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc'; // 'asc' ou 'desc'
+
+    function sortTableBy(column) {
+      if (currentSortColumn === column) {
+        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortColumn = column;
+        currentSortOrder = 'asc';
+      }
+
+      filteredEmployees.sort((a, b) => {
+        let valA = a[column];
+        let valB = b[column];
+
+        if (column === 'loja_num') {
+          valA = parseInt(valA, 10) || 0;
+          valB = parseInt(valB, 10) || 0;
+        } else if (column === 'qtd_filhos') {
+          valA = parseInt(valA, 10) || 0;
+          valB = parseInt(valB, 10) || 0;
+        } else if (column === 'dt_admissao') {
+          const parseDt = (dStr) => {
+            if (!dStr) return 0;
+            const parts = dStr.split('/');
+            if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime() || 0;
+            return 0;
+          };
+          valA = parseDt(valA);
+          valB = parseDt(valB);
+        } else {
+          valA = (valA || '').toString().toLowerCase();
+          valB = (valB || '').toString().toLowerCase();
+        }
+
+        if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      currentPage = 1;
+      renderEmployeesTable();
     }
 
     function clearFilters() {
