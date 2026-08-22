@@ -1,4 +1,4 @@
-const CACHE_NAME = 'portal-parceiro-leo-v1';
+const CACHE_NAME = 'portal-parceiro-leo-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -6,7 +6,9 @@ const ASSETS_TO_CACHE = [
   '/assets/logo-light.png',
   '/assets/logo-dark.png',
   '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png'
+  '/assets/icons/icon-512.png',
+  '/assets/icons/icon-maskable-192.png',
+  '/assets/icons/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -34,13 +36,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass-through API and dynamic requests directly to network
   if (event.request.url.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Network-first with cache fallback for app shell
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request);
