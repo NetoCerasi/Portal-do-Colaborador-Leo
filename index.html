@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal do Parceiro Leo | Plataforma de Gestão</title>
 
+  <!-- Favicon & PWA App Icons -->
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#c0f200">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Parceiro Leo">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -96,6 +105,12 @@
       <button onclick="exportToExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-500/40 text-xs font-black flex items-center gap-1.5 transition shadow-sm cursor-pointer" title="Baixar planilha formatada diretamente em colunas no Microsoft Excel">
         <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
         <span>Exportar Excel</span>
+      </button>
+
+      <!-- Install App Button (PWA) -->
+      <button id="btn-install-pwa" onclick="installPWA()" class="hidden px-3 py-2 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-black text-xs font-black flex items-center gap-1.5 transition transform active:scale-95 shadow-md shadow-endoLime-400/20" title="Instalar aplicativo no computador / celular">
+        <i data-lucide="download" class="w-4 h-4 text-black"></i>
+        <span class="hidden sm:inline">Instalar App</span>
       </button>
 
       <!-- Dark/Light Theme Switcher Button -->
@@ -1034,13 +1049,50 @@
       '10': 'outubro', '11': 'novembro', '12': 'dezembro'
     };
 
+    // PWA Install Prompt State
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('btn-install-pwa');
+      if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      const installBtn = document.getElementById('btn-install-pwa');
+      if (installBtn) installBtn.classList.add('hidden');
+    });
+
+    async function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          deferredPrompt = null;
+          const installBtn = document.getElementById('btn-install-pwa');
+          if (installBtn) installBtn.classList.add('hidden');
+        }
+      } else {
+        alert("Para instalar pelo Google Chrome:\n1. Clique nos 3 pontinhos (Menu) no canto superior do navegador\n2. Clique em 'Instalar Portal do Parceiro Leo' ou 'Salvar e Compartilhar > Instalar'");
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       initThemeFromStorage();
       lucide.createIcons();
       checkAuthSession();
       setupSSE();
       setupOutsideClickListeners();
+      registerServiceWorker();
     });
+
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    }
 
     function initThemeFromStorage() {
       const savedTheme = localStorage.getItem('theme');
