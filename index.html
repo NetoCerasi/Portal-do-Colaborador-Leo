@@ -82,6 +82,12 @@
         <span>+ Novo Colaborador</span>
       </button>
 
+      <!-- Add Store Button (Admin Only) -->
+      <button id="btn-header-add-store" onclick="openAddStoreModal()" class="hidden px-3.5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-xs font-black text-black shadow-md shadow-cyan-400/20 flex items-center gap-1.5 transition transform active:scale-95">
+        <i data-lucide="store" class="w-4 h-4 text-black"></i>
+        <span>+ Nova Loja</span>
+      </button>
+
       <!-- Manage Users Button (Admin Only) -->
       <button id="btn-manage-users" onclick="openManageUsersModal()" class="hidden px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:text-slate-200 dark:border-endoDark-800 text-xs font-bold flex items-center gap-1.5 transition">
         <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"></i>
@@ -489,7 +495,7 @@
             Cadastre novas unidades parceiras ou gerencie lojas existentes e suas bases integradas
           </p>
         </div>
-        <button onclick="openAddStoreModal()" class="px-4 py-2.5 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-xs font-black text-black shadow-md shadow-endoLime-400/20 flex items-center gap-2 transition transform active:scale-95 brand-lime-glow shrink-0">
+        <button id="btn-tab-add-store" onclick="openAddStoreModal()" class="hidden px-4 py-2.5 rounded-xl bg-endoLime-400 hover:bg-endoLime-300 text-xs font-black text-black shadow-md shadow-endoLime-400/20 flex items-center gap-2 transition transform active:scale-95 brand-lime-glow shrink-0">
           <i data-lucide="plus" class="w-4 h-4 text-black"></i>
           <span>+ Nova Loja</span>
         </button>
@@ -1025,10 +1031,17 @@
       document.getElementById('user-avatar-initials').innerText = initials;
 
       const manageBtn = document.getElementById('btn-manage-users');
+      const headerAddStoreBtn = document.getElementById('btn-header-add-store');
+      const tabAddStoreBtn = document.getElementById('btn-tab-add-store');
+
       if (currentUser.role === 'ADMIN') {
-        manageBtn.classList.remove('hidden');
+        if (manageBtn) manageBtn.classList.remove('hidden');
+        if (headerAddStoreBtn) headerAddStoreBtn.classList.remove('hidden');
+        if (tabAddStoreBtn) tabAddStoreBtn.classList.remove('hidden');
       } else {
-        manageBtn.classList.add('hidden');
+        if (manageBtn) manageBtn.classList.add('hidden');
+        if (headerAddStoreBtn) headerAddStoreBtn.classList.add('hidden');
+        if (tabAddStoreBtn) tabAddStoreBtn.classList.add('hidden');
       }
       lucide.createIcons();
     }
