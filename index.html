@@ -36,6 +36,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS (XLSX) CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -95,10 +97,10 @@
       </button>
 
       <!-- Export Excel Button -->
-      <a href="/api/export" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-500/40 text-xs font-black flex items-center gap-1.5 transition shadow-sm" title="Baixar planilha formatada diretamente em colunas no Microsoft Excel">
+      <button onclick="exportToExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-400 dark:border-emerald-500/40 text-xs font-black flex items-center gap-1.5 transition shadow-sm cursor-pointer" title="Baixar planilha formatada diretamente em colunas no Microsoft Excel">
         <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
         <span>Exportar Excel</span>
-      </a>
+      </button>
 
       <!-- Dark/Light Theme Switcher Button -->
       <button onclick="toggleTheme()" id="btn-theme-switcher" class="w-9 h-9 rounded-xl bg-slate-200 hover:bg-slate-300 border border-slate-300 dark:bg-endoDark-850 dark:hover:bg-endoDark-800 dark:border-endoDark-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition shadow-sm" title="Alternar Tema Claro / Escuro">
@@ -2533,6 +2535,63 @@
 
       document.getElementById('employee-modal').classList.remove('hidden');
       lucide.createIcons();
+    }
+
+    function exportToExcel() {
+      const dataToExport = (filteredEmployees && filteredEmployees.length > 0) ? filteredEmployees : (rawData.employees || []);
+      if (!dataToExport || dataToExport.length === 0) {
+        alert("Não há dados de colaboradores para exportar.");
+        return;
+      }
+
+      const rows = dataToExport.map(emp => {
+        const filhosNomes = (emp.filhos || []).map(f => `${f.nome} (${f.idade || '?'} anos)`).join('; ');
+        return {
+          "Número Loja": emp.loja_num,
+          "Nome Loja": emp.nome_loja,
+          "Matrícula": emp.matricula || '',
+          "Nome Colaborador": emp.nome,
+          "Status": emp.status,
+          "CPF": emp.cpf || '',
+          "Cargo": emp.cargo || '',
+          "Área": emp.area || '',
+          "Líder Direto": emp.lider_direto || '',
+          "Data Admissão": emp.dt_admissao || '',
+          "Ano Admissão": emp.adm_ano || '',
+          "Mês Admissão": emp.adm_mes || '',
+          "Dia Admissão": emp.adm_dia || '',
+          "Data Nascimento": emp.dt_nascimento || '',
+          "Idade (Hoje)": emp.idade || '',
+          "Sexo": emp.sexo || '',
+          "E-mail": emp.email || '',
+          "PCD": emp.pcd || 'NÃO',
+          "Raça / Etnia": emp.raca_etnia || 'NÃO INFORMADO',
+          "Grau Instrução": emp.instrucao || '',
+          "Mãe / Pai?": emp.eh_mae_pai || 'NÃO',
+          "Qtd Filhos": emp.qtd_filhos || 0,
+          "Dependentes / Filhos": filhosNomes,
+          "Data Desligamento": emp.dt_desligamento || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      
+      // Auto width for columns
+      const colWidths = [
+        { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 35 }, { wch: 12 },
+        { wch: 16 }, { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 },
+        { wch: 12 }, { wch: 30 }, { wch: 10 }, { wch: 18 }, { wch: 25 },
+        { wch: 12 }, { wch: 12 }, { wch: 40 }, { wch: 18 }
+      ];
+      worksheet['!cols'] = colWidths;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Colaboradores Parceiros");
+
+      const today = new Date();
+      const filenameDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      XLSX.writeFile(workbook, `Base_Colaboradores_Parceiros_Leo_${filenameDate}.xlsx`);
     }
 
     function closeModal() {
