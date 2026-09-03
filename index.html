@@ -173,43 +173,28 @@
           <select id="filter-store" onchange="applyFilters()" class="w-full bg-slate-50 border-slate-300 text-slate-900 dark:bg-endoDark-950 dark:border-endoDark-700 dark:text-slate-100 text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:border-endoLime-400 transition shadow-inner">
             <option value="">Todas as Lojas</option>
             <option value="2050">Loja 2050 - BRASÍLIA</option>
-            <option value="2051">Loja 2051 - CAMPINAS</option>
+            <option value="2051">Loja 2051 - CD BRASÍLIA</option>
             <option value="2052">Loja 2052 - VALPARAÍSO DE GOIÁS</option>
-            <option value="2061">Loja 2061 - GOIÂNIA</option>
             <option value="2075">Loja 2075 - GOIÂNIA</option>
-            <option value="2100">Loja 2100 - SÃO LUÍS</option>
-            <option value="2101">Loja 2101 - SÃO LUÍS COHAMA</option>
-            <option value="2102">Loja 2102 - SANTA INÊS</option>
-            <option value="2103">Loja 2103 - IMPERATRIZ</option>
-            <option value="2125">Loja 2125 - CUIABÁ</option>
-            <option value="2126">Loja 2126 - VÁRZEA GRANDE</option>
-            <option value="2127">Loja 2127 - VÁRZEA GRANDE</option>
             <option value="2400">Loja 2400 - RIBEIRÃO PRETO</option>
-            <option value="2425">Loja 2425 - CAMPINAS</option>
-            <option value="2426">Loja 2426 - VÁRZEA GRANDE</option>
+            <option value="2425">Loja 2425 - VÁRZEA GRANDE</option>
+            <option value="2426">Loja 2426 - VPT VÁRZEA GRANDE</option>
             <option value="2427">Loja 2427 - CUIABÁ</option>
-            <option value="2429">Loja 2429 - CUIABÁ</option>
+            <option value="2429">Loja 2429 - SINOP</option>
             <option value="2475">Loja 2475 - CURITIBA</option>
             <option value="2550">Loja 2550 - TERESINA</option>
             <option value="2551">Loja 2551 - TERESINA</option>
             <option value="2552">Loja 2552 - TERESINA</option>
             <option value="2575">Loja 2575 - UBERLÂNDIA</option>
             <option value="2700">Loja 2700 - PETROLINA</option>
-            <option value="2775">Loja 2775 - CARUARU</option>
-            <option value="2800">Loja 2800 - RECIFE</option>
+            <option value="2775">Loja 2775 - MONTES CLAROS</option>
+            <option value="2800">Loja 2800 - JOÃO PESSOA</option>
             <option value="2805">Loja 2805 - RECIFE</option>
             <option value="2808">Loja 2808 - CAMPINA GRANDE</option>
             <option value="2809">Loja 2809 - CABEDELO</option>
-            <option value="2810 CD">Loja 2810 CD - JOÃO PESSOA (CD)</option>
-            <option value="2825">Loja 2825 - MACEIÓ</option>
-            <option value="2900">Loja 2900 - BELO HORIZONTE</option>
-            <option value="2950">Loja 2950 - CONTAGEM</option>
-            <option value="2952">Loja 2952 - VENDA NOVA</option>
-            <option value="2955">Loja 2955 - IPATINGA</option>
-            <option value="2956">Loja 2956 - JUIZ DE FORA</option>
-            <option value="2962">Loja 2962 - UBERABA</option>
-            <option value="2963">Loja 2963 - SETE LAGOAS</option>
-            <option value="2964">Loja 2964 - CASTELO</option>
+            <option value="2810">Loja 2810 - JOÃO PESSOA (CD)</option>
+            <option value="2825">Loja 2825 - JUIZ DE FORA</option>
+            <option value="2900">Loja 2900 - ARACAJU</option>
           </select>
         </div>
 
@@ -518,7 +503,7 @@
               <tr>
                 <th class="py-3.5 px-4 cursor-pointer hover:text-endoLime-400 transition select-none" onclick="sortTableBy('loja_num')">
                   <div class="flex items-center gap-1.5">
-                    <span>Loja</span>
+                    <span>Loja / Unidade</span>
                     <i data-lucide="arrow-up-down" class="w-3 h-3 opacity-60"></i>
                   </div>
                 </th>
@@ -1750,7 +1735,9 @@
           const matchNome = e.nome && e.nome.toLowerCase().includes(search);
           const matchCpf = e.cpf && e.cpf.includes(search);
           const matchMat = e.matricula && e.matricula.includes(search);
-          if (!matchNome && !matchCpf && !matchMat) return false;
+          const matchLoja = (e.loja_num && String(e.loja_num).toLowerCase().includes(search)) || (e.nome_loja && e.nome_loja.toLowerCase().includes(search));
+          const matchCargo = e.cargo && e.cargo.toLowerCase().includes(search);
+          if (!matchNome && !matchCpf && !matchMat && !matchLoja && !matchCargo) return false;
         }
 
         return true;
@@ -2104,7 +2091,10 @@
         const initials = e.nome ? e.nome.split(' ').map(n=>n[0]).slice(0,2).join('') : '??';
 
         tr.innerHTML = `
-          <td class="py-3.5 px-4 font-bold text-lime-700 dark:text-endoLime-400">Loja ${e.loja_num}</td>
+          <td class="py-3.5 px-4 whitespace-nowrap">
+            <div class="font-extrabold text-lime-700 dark:text-endoLime-400 text-xs">Loja ${e.loja_num}</div>
+            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-tight">${e.nome_loja || '-'}</div>
+          </td>
           <td class="py-3.5 px-4">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-endoDark-800 text-slate-800 dark:text-slate-200 font-black text-[11px] flex items-center justify-center border border-slate-300 dark:border-endoDark-700 shadow-sm">${initials}</div>
@@ -2125,7 +2115,7 @@
           <td class="py-3.5 px-4 text-lime-700 dark:text-endoLime-400 font-bold">${e.dt_admissao || '-'}</td>
           <td class="py-3.5 px-4 text-center">
             ${e.qtd_filhos > 0 
-              ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30">${e.qtd_filhos} filho(s)</span>`
+              ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30 inline-block min-w-[24px] text-center">${e.qtd_filhos}</span>`
               : `<span class="text-slate-400 dark:text-slate-500 text-[10px]">-</span>`}
           </td>
           <td class="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">

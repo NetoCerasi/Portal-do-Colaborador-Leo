@@ -235,17 +235,11 @@ def clean_region_name(num, parsed_name=None):
 def extract_store_num_and_name(file_path):
     filename = os.path.basename(file_path)
     parent_dir = os.path.basename(os.path.dirname(file_path))
-
-    if '2810' in filename or '2810' in parent_dir:
-        return '2810 CD', 'JOÃO PESSOA (CD)'
-
-    match = re.search(r'LOJA\s*(\d{3,4})', filename, re.IGNORECASE) or re.search(r'(\d{3,4})', parent_dir)
+    match = re.search(r'(\d{3,4})', filename) or re.search(r'(\d{3,4})', parent_dir)
     if match:
         num = match.group(1).strip()
-        region = clean_region_name(num)
-        return num, region
-
-    return '2050', 'BRASÍLIA'
+        return num, num
+    return '2050', '2050'
 
 def parse_xlsx_fast_exact(file_path):
     employees = []
@@ -265,7 +259,27 @@ def parse_xlsx_fast_exact(file_path):
                         full_txt = "".join([t.text for t in si.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t') if t.text])
                         shared_strings.append(full_txt)
 
-            sheet_xml = z.read('xl/worksheets/sheet1.xml')
+            wb_tree = ET.fromstring(z.read('xl/workbook.xml'))
+            rels_tree = ET.fromstring(z.read('xl/_rels/workbook.xml.rels'))
+            rel_map = {r.attrib['Id']: r.attrib['Target'] for r in rels_tree}
+            
+            target_sheet = None
+            for s in wb_tree.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet'):
+                name = s.attrib.get('name', '')
+                if 'FUNCION' in name.upper() or 'RELA' in name.upper():
+                    r_id = s.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id']
+                    target = rel_map[r_id]
+                    target_sheet = 'xl/' + target if not target.startswith('xl/') else target
+                    break
+            
+            if not target_sheet:
+                for s in wb_tree.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet'):
+                    r_id = s.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id']
+                    target = rel_map[r_id]
+                    target_sheet = 'xl/' + target if not target.startswith('xl/') else target
+                    break
+
+            sheet_xml = z.read(target_sheet)
             tree = ET.fromstring(sheet_xml)
 
             rows = tree.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}row')
@@ -357,6 +371,22 @@ def parse_xlsx_fast_exact(file_path):
 
             ref_today = datetime.date.today()
 
+            # Determine primary store name from Column B (or fallback to folder/file)
+            b_names = {}
+            for r in data_rows[header_row_idx + 1:]:
+                n = r[c_nome].strip() if c_nome != -1 and c_nome < len(r) else ''
+                if not n or n.upper() == 'NOME' or 'TOTAL' in n.upper():
+                    continue
+                b_val = r[1].strip().upper() if len(r) > 1 and r[1].strip() else ''
+                if b_val:
+                    b_names[b_val] = b_names.get(b_val, 0) + 1
+
+            primary_store_name = max(b_names.items(), key=lambda x: x[1])[0] if b_names else loja_num
+            if loja_num == '2810' and 'CD' not in primary_store_name:
+                primary_store_name = 'JOÃO PESSOA (CD)'
+
+            store_info['nome_loja'] = primary_store_name
+
             for row_idx in range(header_row_idx + 1, len(data_rows)):
                 r = data_rows[row_idx]
                 if not r:
@@ -370,11 +400,8 @@ def parse_xlsx_fast_exact(file_path):
                 if not status:
                     status = 'ATIVO'
 
-                l_num = store_info['loja_num']
-                if c_loja_num != -1 and c_loja_num < len(r) and r[c_loja_num].strip() and r[c_loja_num].strip() != '??':
-                    l_num = r[c_loja_num].strip()
-
-                l_nome = clean_region_name(l_num, r[c_loja_nome].strip() if c_loja_nome != -1 and c_loja_nome < len(r) else store_info['nome_loja'])
+                l_num = loja_num
+                l_nome = primary_store_name
 
                 dt_adm_raw = r[c_adm].strip() if c_adm != -1 and c_adm < len(r) else ''
                 dt_adm = format_excel_date(dt_adm_raw)
@@ -500,32 +527,30 @@ def scan_and_rebuild_dataset(force=False):
             if ce.get('adm_ano'):
                 admission_years_set.add(ce['adm_ano'])
 
-    # Merge parsed stores with PREDEFINED_STORES master list
-    parsed_stores_map = {s['loja_num']: s for s in stores_summary_parsed}
-    final_stores_list = []
+    # Aggregate stores directly from parsed employees
+    from collections import defaultdict
+    stores_dict = defaultdict(lambda: {'nome_loja': '', 'total': 0, 'ativos': 0, 'desligados': 0})
+    for e in all_employees:
+        num = e['loja_num']
+        nome = e['nome_loja']
+        stores_dict[num]['nome_loja'] = nome
+        stores_dict[num]['total'] += 1
+        if 'ATIVO' in e['status']:
+            stores_dict[num]['ativos'] += 1
+        elif 'DESLIG' in e['status']:
+            stores_dict[num]['desligados'] += 1
 
-    for p_store in PREDEFINED_STORES:
-        num = p_store['loja_num']
-        region = clean_region_name(num)
-        if num in parsed_stores_map:
-            parsed = parsed_stores_map[num]
-            final_stores_list.append({
-                'loja_num': num,
-                'nome_loja': region,
-                'filename': parsed.get('filename', f'LOJA {num}.xlsx'),
-                'total_colaboradores': parsed.get('total_colaboradores', 0),
-                'ativos': parsed.get('ativos', 0),
-                'desligados': parsed.get('desligados', 0)
-            })
-        else:
-            final_stores_list.append({
-                'loja_num': num,
-                'nome_loja': region,
-                'filename': 'Pré-cadastrada',
-                'total_colaboradores': 0,
-                'ativos': 0,
-                'desligados': 0
-            })
+    final_stores_list = []
+    for num in sorted(stores_dict.keys(), key=lambda x: (int(x) if x.isdigit() else 9999, x)):
+        d = stores_dict[num]
+        final_stores_list.append({
+            'loja_num': num,
+            'nome_loja': d['nome_loja'],
+            'filename': f'Base Loja {num}',
+            'total_colaboradores': d['total'],
+            'ativos': d['ativos'],
+            'desligados': d['desligados']
+        })
 
     total_records = len(all_employees)
     active_records = sum(1 for e in all_employees if 'ATIVO' in e['status'])
